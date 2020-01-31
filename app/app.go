@@ -19,18 +19,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-  "github.com/cosmos/cosmos-sdk/x/crisis"
+	"github.com/cosmos/cosmos-sdk/x/crisis"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-  "github.com/cosmos/cosmos-sdk/x/evidence"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-  "github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
-  paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
+	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-  "github.com/cosmos/cosmos-sdk/x/upgrade"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 )
 
@@ -55,14 +55,14 @@ var (
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
 		staking.AppModuleBasic{},
-    mint.AppModuleBasic{},
+		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
-    gov.NewAppModuleBasic(paramsclient.ProposalHandler, distr.ProposalHandler, upgradeclient.ProposalHandler),
+		gov.NewAppModuleBasic(paramsclient.ProposalHandler, distr.ProposalHandler, upgradeclient.ProposalHandler),
 		params.AppModuleBasic{},
-    crisis.AppModuleBasic{},
+		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
-    upgrade.AppModuleBasic{},
+		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		// TODO: Add your module(s) AppModuleBasic
 	)
@@ -71,10 +71,10 @@ var (
 	maccPerms = map[string][]string{
 		auth.FeeCollectorName:     nil,
 		distr.ModuleName:          nil,
-    mint.ModuleName:           {supply.Minter},
+		mint.ModuleName:           {supply.Minter},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-    gov.ModuleName:            {supply.Burner},
+		gov.ModuleName:            {supply.Burner},
 	}
 )
 
@@ -224,13 +224,13 @@ func NewInitApp(
 		app.subspaces[slashing.ModuleName],
 	)
 
-  app.crisisKeeper = crisis.NewKeeper(
+	app.crisisKeeper = crisis.NewKeeper(
 		app.subspaces[crisis.ModuleName], invCheckPeriod, app.supplyKeeper, auth.FeeCollectorName,
 	)
 
 	app.upgradeKeeper = upgrade.NewKeeper(skipUpgradeHeights, keys[upgrade.StoreKey], app.cdc)
 
-  // create evidence keeper with evidence router
+	// create evidence keeper with evidence router
 	evidenceKeeper := evidence.NewKeeper(
 		app.cdc, keys[evidence.StoreKey], app.subspaces[evidence.ModuleName], &stakingKeeper, app.slashingKeeper,
 	)
@@ -296,13 +296,13 @@ func NewInitApp(
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
-    gov.ModuleName,
-    mint.ModuleName,
+		gov.ModuleName,
+		mint.ModuleName,
 		// TODO: Add your module(s)
 		supply.ModuleName,
-    crisis.ModuleName,
+		crisis.ModuleName,
 		genutil.ModuleName,
-    evidence.ModuleName,
+		evidence.ModuleName,
 	)
 
 	// register all module routes and module queriers
@@ -321,6 +321,24 @@ func NewInitApp(
 			auth.DefaultSigVerificationGasConsumer,
 		),
 	)
+
+	// create the simulation manager and define the order of the modules for deterministic simulations
+	//
+	// NOTE: This is not required for apps that don't use the simulator for fuzz testing
+	// transactions.
+	app.sm = module.NewSimulationManager(
+		auth.NewAppModule(app.accountKeeper),
+		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
+		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
+		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
+		mint.NewAppModule(app.mintKeeper),
+		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
+		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
+		// TODO: Add your module(s)
+	)
+
+	app.sm.RegisterStoreDecoders()
 
 	// initialize stores
 	app.MountKVStores(keys)
