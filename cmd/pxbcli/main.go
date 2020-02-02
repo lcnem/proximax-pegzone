@@ -25,7 +25,6 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/lcnem/proximax-pegzone/app"
-
 )
 
 func main() {
@@ -47,7 +46,7 @@ func main() {
 	// with the cdc
 
 	rootCmd := &cobra.Command{
-		Use:   "acli",
+		Use:   "pxbcli",
 		Short: "Command line interface for interacting with appd",
 	}
 
@@ -73,7 +72,7 @@ func main() {
 	)
 
 	// Add flags and prefix all env exposed with AA
-	executor := cli.PrepareMainCmd(rootCmd, "AA", app.DefaultCLIHome)
+	executor := cli.PrepareMainCmd(rootCmd, "PX", app.DefaultCLIHome)
 
 	err := executor.Execute()
 	if err != nil {

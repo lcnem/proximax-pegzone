@@ -32,20 +32,22 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
+	"github.com/cosmos/peggy/x/oracle"
+	bridge "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 )
 
-const appName = "app"
+const appName = "pxb"
 
 var (
 	// TODO: rename your cli
 
 	// DefaultCLIHome default home directories for the application CLI
-	DefaultCLIHome = os.ExpandEnv("$HOME/.acli")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.pxbcli")
 
 	// TODO: rename your daemon
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
-	DefaultNodeHome = os.ExpandEnv("$HOME/.aud")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.pxbd")
 
 	// ModuleBasics The module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration
@@ -65,6 +67,8 @@ var (
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		// TODO: Add your module(s) AppModuleBasic
+		oracle.AppModuleBasic{},
+		bridge.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -119,6 +123,8 @@ type NewApp struct {
 	upgradeKeeper  upgrade.Keeper
 	evidenceKeeper evidence.Keeper
 	// TODO: Add your module(s)
+	oracleKeeper oracle.Keeper
+	bridgeKeeper bridge.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -148,6 +154,7 @@ func NewInitApp(
 		bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, params.StoreKey, evidence.StoreKey, upgrade.StoreKey,
+		oracle.StoreKey, bridge.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -261,6 +268,8 @@ func NewInitApp(
 	)
 
 	// TODO: Add your module(s) keepers
+	app.oracleKeeper = oracle.NewKeeper(app.cdc, keys[oracle.StoreKey], app.stakingKeeper)
+	app.bridgeKeeper = bridge.NewKeeper(app.cdc, keys[bridge.StoreKey])
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -278,6 +287,8 @@ func NewInitApp(
 		upgrade.NewAppModule(app.upgradeKeeper),
 		evidence.NewAppModule(app.evidenceKeeper),
 		// TODO: Add your module(s)
+		oracle.NewAppModule(app.oracleKeeper),
+		bridge.NewAppModule(app.bridgeKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 	)
 	// During begin block slashing happens after distr.BeginBlocker so that
