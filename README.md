@@ -2,18 +2,18 @@
 
 # Peg Zone
 
-- 基本設計はcosmos/peggyを踏襲。
-- d,cli,relayerの3部設計。
+- 基本設計は cosmos/peggy を踏襲。
+- d,cli,relayer の 3 部設計。
 - `1000000000` `stake`のネイティブトークン。
 
-## Ethereum Peggyとの相違点
+## Ethereum Peggy との相違点
 
-- Etheruem Peggyは初期化する際にコントラクトアドレスを指定する、1ERC20トークン1Peggyチェーン仕様。
-- Catapult/ProximaXはネイティブトークンと非ネイティブトークンが並列に扱われるため、1Peggyチェーンで全トークンに対応できる。
-- Catapult/ProximaXにはスマートコントラクトによるトークンロックがないため、マルチシグアドレスにトークンを封じ込めることで再現する。
+- Etheruem Peggy は初期化する際にコントラクトアドレスを指定する、1ERC20 トークン 1Peggy チェーン仕様。
+- Catapult/ProximaX はネイティブトークンと非ネイティブトークンが並列に扱われるため、1Peggy チェーンで全トークンに対応できる。
+- Catapult/ProximaX にはスマートコントラクトによるトークンロックがないため、マルチシグアドレスにトークンを封じ込めることで再現する。
 - 全ステーク量のうち、10%以上を占めるバリデータが、マルチシグアドレスの連署名者になれる。
-  - Catapult/ProximaXではマルチシグアドレスの連署名者は10アドレスまでという制約と整合できる。
-  - Catapult/ProixmaXではマルチシグに必要な連署名を過半数とする。
+  - Catapult/ProximaX ではマルチシグアドレスの連署名者は 10 アドレスまでという制約と整合できる。
+  - Catapult/ProixmaX ではマルチシグに必要な連署名を過半数とする。
 
 ## モジュール
 
@@ -22,55 +22,15 @@
 
 ## Daemon
 
-- OracleはEthereum Peggyのコードパクる。
-- Bridge設計が肝になる。
+- Oracle は Ethereum Peggy のコードパクる。
+- Bridge 設計が肝になる。
 
 ### Bridge
 
-#### MsgReceiveInvitation
-
-`first_cosigner_address`に、Catapult/ProximaXにて連署名に招待するよう要求するメッセージ。
-
-```TypeScript
-{
-  validator_address: ValAddress;
-  mainchain_address: string;
-  first_cosigner_address: ValAddress;
-}
-```
-
-#### MsgInvitationNotProposedProphecy
-
-ステークが10%以上あり、`MsgReceiveInvitation`を行ったにもかかわらず連署名招待されていないことを訴訟するメッセージ。
-訴訟が正しければ`first_cosigner_address`はペナルティを与えられるが、訴訟が正しくなければ訴訟者が罰せられる。
-ペナルティ分は、正しい方に分配される。
-
-```TypeScript
-{
-  validator_address: ValAddress;
-  mainchain_address: string;
-  first_cosigner_address: ValAddress;
-}
-```
-
-#### MsgInvitationNotCosignedProphecy
-
-ステークが10%以上あり、`MsgReceiveInvitation`を行ったにもかかわらず連署名招待のマルチシグトランザクションに連署名が集まっていないことを訴訟するメッセージ。
-訴訟が正しければ`invitee_address`以外の連署名者はペナルティを与えられるが、訴訟が正しくなければ訴訟者が罰せられる。
-ペナルティ分は、正しい方に分配される。
-
-```TypeScript
-{
-  validator_address: ValAddress;
-  mainchain_address: string;
-  first_cosigner_address: ValAddress;
-}
-```
-
-#### MsgPegProphecy
+#### MsgPegClaim
 
 メインチェーンにて、ペッグ用マルチシグアドレスに対してアセットを送信したことを訴訟する。
-訴訟が正しければ本Peg ZoneにCoinがミントされる。
+訴訟が正しければ本 Peg Zone に Coin がミントされる。
 
 ```TypeScript
 {
@@ -91,7 +51,7 @@
 }
 ```
 
-#### MsgUnpegNotProposedProphecy
+#### MsgUnpegNotProposedClaim
 
 `MsgUnPeg`したのにされてねえよという訴訟。
 
@@ -103,29 +63,42 @@
 }
 ```
 
+#### MsgRequestInvitation
 
-#### MsgUnpegNotCosignedPropechy
-
-`MsgUnPeg`したのに連署名されてねえよという訴訟。
+`first_cosigner_address`に、Catapult/ProximaX にて連署名に招待するよう要求するメッセージ。
 
 ```TypeScript
 {
   validator_address: ValAddress;
-  tx_hash: string;
+  mainchain_address: string;
+  first_cosigner_address: ValAddress;
+}
+```
+
+#### MsgInvitationNotCosignedClaim
+
+ステークが 10%以上あり、`MsgReceiveInvitation`を行ったにもかかわらず連署名招待のマルチシグトランザクションに連署名が集まっていないことを訴訟するメッセージ。
+訴訟が正しければ`invitee_address`以外の連署名者はペナルティを与えられるが、訴訟が正しくなければ訴訟者が罰せられる。
+ペナルティ分は、正しい方に分配される。
+
+```TypeScript
+{
+  validator_address: ValAddress;
+  mainchain_address: string;
   first_cosigner_address: ValAddress;
 }
 ```
 
 ## CLI
 
-- Oracleに関しては実装なし。
-- BridgeモジュールにはCLIとRESTを実装する。
-- 基本的にコマンドを使うことはなく、RelayerがフルオートでRESTを叩く
+- Oracle に関しては実装なし。
+- Bridge モジュールには CLI と REST を実装する。
+- 基本的にコマンドを使うことはなく、Relayer がフルオートで REST を叩く
 
 ## Relayer
 
-- WebSocketでPeg元チェーンを常駐監視。
-- Ethereumの場合、ペッグ用コントラクトアドレスへのトークン振り込みを確認するとイベント発火するようになっている。
-- Catapult/ProximaXの場合、ペッグ用マルチシグアドレスへのトークン振り込みを常駐監視するといい。
-- イベント発火するとどうするかというと、対応するMsgのトランザクションをアナウンスすればよいだけ。
+- WebSocket で Peg 元チェーンを常駐監視。
+- Ethereum の場合、ペッグ用コントラクトアドレスへのトークン振り込みを確認するとイベント発火するようになっている。
+- Catapult/ProximaX の場合、ペッグ用マルチシグアドレスへのトークン振り込みを常駐監視するといい。
+- イベント発火するとどうするかというと、対応する Msg のトランザクションをアナウンスすればよいだけ。
 - 訴訟もフルオートで行う。

@@ -1,7 +1,7 @@
 import { ValAddress } from "cosmos-client";
 
-export type MsgUnpegNotProposedClaim = {
+export type MsgRequestInvitation = {
   validator_address: ValAddress;
-  tx_hash: string;
+  mainchain_address: string;
   first_cosigner_address: ValAddress;
 };

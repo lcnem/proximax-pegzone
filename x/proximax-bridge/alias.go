@@ -27,7 +27,7 @@ var (
 	// TODO: Fill out function aliases
 
 	// variable aliases
-	ModuleCdc     = types.ModuleCdc
+	ModuleCdc = types.ModuleCdc
 	// TODO: Fill out variable aliases
 )
 
@@ -37,4 +37,9 @@ type (
 	Params       = types.Params
 
 	// TODO: Fill out module types
+	MsgPegClaim                   = types.MsgPegClaim
+	MsgUnpeg                      = types.MsgUnpeg
+	MsgUnpegNotCosignedClaim      = types.MsgUnpegNotCosignedClaim
+	MsgRequestInvitation          = types.MsgRequestInvitation
+	MsgInvitationNotCosignedClaim = types.MsgMsgInvitationNotCosignedClaim
 )
