@@ -3,43 +3,119 @@ package proximax_bridge
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/peggy/x/oracle"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
 )
 
 // NewHandler creates an sdk.Handler for all the proximax-bridge type messages
-func NewHandler(k Keeper) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper Keeper) sdk.Handler {
+	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		// TODO: Define your msg cases
-		// 
+		//
+		case MsgPegClaim:
+			return handleMsgPegClaim(ctx, cdc, bridgeKeeper, msg)
+		case MsgUnpeg:
+			return handleMsgUnpeg(ctx, cdc, accountKeeper, bridgeKeeper, msg)
+		case MsgUnpegNotCosignedClaim:
+			return handleMsgUnpegNotCosignedClaim(ctx, cdc, accountKeeper, bridgeKeeper, msg)
+
 		//Example:
 		// case MsgSet<Action>:
 		// 	return handleMsg<Action>(ctx, keeper, msg)
 		default:
-			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName,  msg)
-			return sdk.ErrUnknownRequest(errMsg).Result()
+			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 	}
 }
 
-// handde<Action> does x
-func handleMsg<Action>(ctx sdk.Context, msg MsgType, k Keeper) sdk.Result {
-
-	err := k.<Action>(ctx, msg.ValidatorAddr)
+// Handle a message to create a bridge claim
+func handleMsgPegClaim(
+	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgPegClaim,
+) (*sdk.Result, error) {
+	status, err := bridgeKeeper.ProcessClaim(ctx, types.EthBridgeClaim(msg))
 	if err != nil {
-		return err.Result()
+		return nil, err
+	}
+	if status.Text == oracle.SuccessStatusText {
+		if err := bridgeKeeper.ProcessSuccessfulClaim(ctx, status.FinalClaim); err != nil {
+			return nil, err
+		}
 	}
 
-	// TODO: Define your msg events
-	ctx.EventManager().EmitEvent(
+	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.ValidatorAddr.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
 		),
-	)
+		sdk.NewEvent(
+			types.EventTypeCreateClaim,
+			sdk.NewAttribute(types.AttributeKeyMainchainTxHash, msg.MainchainTxHash),
+			sdk.NewAttribute(types.AttributeKeyCosmosReceiver, msg.Address.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount),
+			sdk.NewAttribute(types.AttributeKeyClaimType, msg.ClaimType.String()),
+		),
+		sdk.NewEvent(
+			types.EventTypeProphecyStatus,
+			sdk.NewAttribute(types.AttributeKeyStatus, status.Text.String()),
+		),
+	})
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgUnpeg(
+	ctx sdk.Context, cdc *codec.Codec, accountKeeper auth.AccountKeeper,
+	bridgeKeeper Keeper, msg MsgUnpeg,
+) (*sdk.Result, error) {
+
+	account := accountKeeper.GetAccount(ctx, msg.Address)
+	if account == nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Address.String())
+	}
+
+	if err := bridgeKeeper.ProcessBurn(ctx, msg.Address, msg.Amount); err != nil {
+		return nil, err
+	}
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
+		),
+		sdk.NewEvent(
+			types.EventTypeUnpeg,
+			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
+			sdk.NewAttribute(types.AttributeKeyMainchainReceiver, msg.MainchainAddress),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+		),
+	})
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+
+}
+
+func handleMsgUnpegNotCosignedClaim(
+	ctx sdk.Context, cdc *codec.Codec, accountKeeper auth.AccountKeeper,
+	bridgeKeeper Keeper, msg MsgUnpegNotCosignedClaim,
+) (*sdk.Result, error) {
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
+		),
+	})
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+
 }

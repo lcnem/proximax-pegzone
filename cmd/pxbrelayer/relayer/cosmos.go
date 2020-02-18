@@ -51,7 +51,9 @@ func InitCosmosRelayer(
 
 			// Iterate over each event inside of the transaction
 			for _, event := range tx.Result.Events {
-				
+				switch event.Type {
+
+				}
 			}
 		case <-quit:
 			os.Exit(0)

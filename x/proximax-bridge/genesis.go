@@ -2,13 +2,13 @@ package proximax_bridge
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // InitGenesis initialize default parameters
 // and the keeper's address to pubkey map
-func InitGenesis(ctx sdk.Context, k Keeper, /* TODO: Define what keepers the module needs */, data types.GenesisState) {
+func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) []abci.ValidatorUpdate {
 
 	// TODO: Define logic for when you would like to initalize a new genesis
 

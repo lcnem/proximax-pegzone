@@ -23,6 +23,7 @@ func InitProximaXRelayer(
 	rpcURL string,
 	custodyAddress string,
 	test bool,
+	account proximax.Account,
 ) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*30)
 
@@ -48,8 +49,8 @@ func InitProximaXRelayer(
 		return err
 	}
 
-	err = client.AddConfirmedAddedHandlers(address, func(tx proximax.Transaction) bool {
-
+	err = client.AddPartialAddedHandlers(account.Address, func(tx *proximax.AggregateTransaction) bool {
+		partialAddedHandler(account, tx)
 		return false
 	})
 
@@ -58,4 +59,24 @@ func InitProximaXRelayer(
 	}
 
 	cancel()
+}
+
+func partialAddedHandler(account proximax.Account, tx *proximax.AggregateTransaction) {
+	if len(tx.InnerTransactions) != 1 {
+		return
+	}
+	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.Transfer {
+		handleTransferTransaction(account, proximax.TransferTransaction(tx.InnerTransactions[0]))
+	}
+	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.ModifyMultisig {
+		handleModifyMultisigTransaction(account, proximax.TransferTransaction(tx.InnerTransactions[0]))
+	}
+}
+
+func handleTransferTransaction(account proximax.Account, tx proximax.TransferTransaction) {
+
+}
+
+func handleModifyMultisigTransaction(account proximax.Account, tx proximax.TransferTransaction) {
+
 }

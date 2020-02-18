@@ -2,16 +2,19 @@ package types
 
 // proximax-bridge module event types
 const (
-	// TODO: Create your event types
-	EventTypePegClaim              = "pegClaim"
-	EventTypeUnpeg                 = "unpeg"
-	EventTypeUnpegNotCosignedClaim = "unpegNotCosignedClaim"
+	EventTypeCreateClaim    = "create_claim"
+	EventTypeProphecyStatus = "prophecy_status"
+	EventTypeUnpeg          = "unpeg"
 
-	// TODO: Create keys fo your events, the values will be derivided from the msg
-	// AttributeKeyAddress  		= "address"
+	AttributeKeyMainchainTxHash = "mainchain_tx_hash"
+	AttributeKeyCosmosReceiver  = "cosmos_receiver"
+	AttributeKeyAmount          = "amount"
+	AttributeKeyStatus          = "status"
+	AttributeKeyClaimType       = "claim_type"
 
-	// TODO: Some events may not have values for that reason you want to emit that something happened.
-	// AttributeValueDoubleSign = "double_sign"
+	AttributeKeyMultisigCustodyAddress = "multisig_custody_address"
+	AttributeKeyCosmosSender           = "cosmos_sender"
+	AttributeKeyMainchainReceiver      = "mainchain_receiver"
 
 	AttributeValueCategory = ModuleName
 )

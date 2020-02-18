@@ -12,7 +12,6 @@ const (
 	RouterKey         = types.RouterKey
 	StoreKey          = types.StoreKey
 	DefaultParamspace = types.DefaultParamspace
-	QueryParams       = types.QueryParams
 	QuerierRoute      = types.QuerierRoute
 )
 
@@ -25,6 +24,11 @@ var (
 	DefaultGenesisState = types.DefaultGenesisState
 	ValidateGenesis     = types.ValidateGenesis
 	// TODO: Fill out function aliases
+	NewMsgPegClaim                   = types.NewMsgPegClaim
+	NewMsgUnpeg                      = types.NewMsgUnpeg
+	NewMsgUnpegNotCosignedClaim      = types.NewMsgUnpegNotCosignedClaim
+	NewMsgRequestInvitation          = types.NewMsgRequestInvitation
+	NewMsgInvitationNotCosignedClaim = types.NewMsgMsgInvitationNotCosignedClaim
 
 	// variable aliases
 	ModuleCdc = types.ModuleCdc

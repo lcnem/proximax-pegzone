@@ -17,19 +17,21 @@ type MsgPegClaim struct {
 }
 
 // NewMsgPegClaim creates a new MsgPegClaim instance
-func NewMsgPegClaim(validatorAddr sdk.ValAddress) MsgPegClaim {
+func NewMsgPegClaim(address sdk.AccAddress, mainchainTxHash string, amount []sdk.Coin) MsgPegClaim {
 	return MsgPegClaim{
-		ValidatorAddr: validatorAddr,
+		Address:         address,
+		MainchainTxHash: mainchainTxHash,
+		Amount:          amount,
 	}
 }
 
-const pegClaimConst = "pegClaim"
+const pegClaimConst = "peg_claim"
 
 // nolint
 func (msg MsgPegClaim) Route() string { return RouterKey }
 func (msg MsgPegClaim) Type() string  { return pegClaimConst }
 func (msg MsgPegClaim) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.ValidatorAddr)}
+	return []sdk.AccAddress{msg.Address}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -40,7 +42,7 @@ func (msg MsgPegClaim) GetSignBytes() []byte {
 
 // ValidateBasic validity check for the AnteHandler
 func (msg MsgPegClaim) ValidateBasic() error {
-	if msg.ValidatorAddr.Empty() {
+	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}
 	return nil
@@ -59,9 +61,12 @@ type MsgUnpeg struct {
 }
 
 // NewMsgUnpeg creates a new MsgUnpeg instance
-func NewMsgUnpeg(validatorAddr sdk.ValAddress) MsgUnpeg {
+func NewMsgUnpeg(address sdk.AccAddress, mainchainAddress string, amount []sdk.Coin, firstCosignerAddress sdk.ValAddress) MsgUnpeg {
 	return MsgUnpeg{
-		ValidatorAddr: validatorAddr,
+		Address:              address,
+		MainchainAddress:     mainchainAddress,
+		Amount:               amount,
+		FirstCosignerAddress: firstCosignerAddress,
 	}
 }
 
@@ -71,7 +76,7 @@ const unpegConst = "unpeg"
 func (msg MsgUnpeg) Route() string { return RouterKey }
 func (msg MsgUnpeg) Type() string  { return unpegConst }
 func (msg MsgUnpeg) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.ValidatorAddr)}
+	return []sdk.AccAddress{msg.Address}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -82,7 +87,7 @@ func (msg MsgUnpeg) GetSignBytes() []byte {
 
 // ValidateBasic validity check for the AnteHandler
 func (msg MsgUnpeg) ValidateBasic() error {
-	if msg.ValidatorAddr.Empty() {
+	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}
 	return nil
@@ -94,25 +99,27 @@ var _ sdk.Msg = &MsgUnpegNotCosignedClaim{}
 
 // MsgUnpegNotCosignedClaim - struct for unjailing jailed validator
 type MsgUnpegNotCosignedClaim struct {
-	ValidatorAddress     sdk.ValAddress `json:"validator_address" yaml: "validator_address"`
+	Address              sdk.ValAddress `json:"address" yaml: "address"`
 	TxHash               string         `json:"tx_hash" yaml:"tx_hash"`
 	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 // NewMsgUnpegNotCosignedClaim creates a new MsgUnpegNotCosignedClaim instance
-func NewMsgUnpegNotCosignedClaim(validatorAddr sdk.ValAddress) MsgUnpegNotCosignedClaim {
+func NewMsgUnpegNotCosignedClaim(address sdk.ValAddress, txHash string, firstCosignerAddress sdk.ValAddress) MsgUnpegNotCosignedClaim {
 	return MsgUnpegNotCosignedClaim{
-		ValidatorAddr: validatorAddr,
+		Address:              address,
+		TxHash:               txHash,
+		FirstCosignerAddress: firstCosignerAddress,
 	}
 }
 
-const unpegNotCosignedClaimConst = "unpegNotCosignedClaim"
+const unpegNotCosignedClaimConst = "unpeg_not_cosigned_claim"
 
 // nolint
 func (msg MsgUnpegNotCosignedClaim) Route() string { return RouterKey }
 func (msg MsgUnpegNotCosignedClaim) Type() string  { return unpegNotCosignedClaimConst }
 func (msg MsgUnpegNotCosignedClaim) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.ValidatorAddr)}
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -123,7 +130,7 @@ func (msg MsgUnpegNotCosignedClaim) GetSignBytes() []byte {
 
 // ValidateBasic validity check for the AnteHandler
 func (msg MsgUnpegNotCosignedClaim) ValidateBasic() error {
-	if msg.ValidatorAddr.Empty() {
+	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}
 	return nil
@@ -136,25 +143,27 @@ var _ sdk.Msg = &MsgRequestInvitation{}
 
 // MsgRequestInvitation - struct for unjailing jailed validator
 type MsgRequestInvitation struct {
-	ValidatorAddress     sdk.ValAddress `json:"validator_address" yaml: "validator_address"`
+	Address              sdk.ValAddress `json:"address" yaml: "address"`
 	MainchainAddress     string         `json:"mainchain_address" yaml:"mainchain_address"`
 	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 // NewMsgRequestInvitation creates a new MsgRequestInvitation instance
-func NewMsgRequestInvitation(validatorAddr sdk.ValAddress) MsgRequestInvitation {
+func NewMsgRequestInvitation(address sdk.ValAddress, mainchainAddress string, firstCosignerAddress sdk.ValAddress) MsgRequestInvitation {
 	return MsgRequestInvitation{
-		ValidatorAddr: validatorAddr,
+		Address:              address,
+		MainchainAddress:     mainchainAddress,
+		FirstCosignerAddress: firstCosignerAddress,
 	}
 }
 
-const requestInvitationConst = "requestInvitation"
+const requestInvitationConst = "request_invitation"
 
 // nolint
 func (msg MsgRequestInvitation) Route() string { return RouterKey }
 func (msg MsgRequestInvitation) Type() string  { return requestInvitationConst }
 func (msg MsgRequestInvitation) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.ValidatorAddr)}
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -165,7 +174,7 @@ func (msg MsgRequestInvitation) GetSignBytes() []byte {
 
 // ValidateBasic validity check for the AnteHandler
 func (msg MsgRequestInvitation) ValidateBasic() error {
-	if msg.ValidatorAddr.Empty() {
+	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}
 	return nil
@@ -178,25 +187,27 @@ var _ sdk.Msg = &MsgMsgInvitationNotCosignedClaim{}
 
 // MsgMsgInvitationNotCosignedClaim - struct for unjailing jailed validator
 type MsgMsgInvitationNotCosignedClaim struct {
-	ValidatorAddress     sdk.ValAddress `json:"validator_address" yaml: "validator_address"`
+	Address              sdk.ValAddress `json:"address" yaml: "address"`
 	MainchainAddress     string         `json:"mainchain_address" yaml:"mainchain_address"`
 	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 // NewMsgMsgInvitationNotCosignedClaim creates a new MsgMsgInvitationNotCosignedClaim instance
-func NewMsgMsgInvitationNotCosignedClaim(validatorAddr sdk.ValAddress) MsgMsgInvitationNotCosignedClaim {
-	return MsgMsgInvitationNotCosignedClaim{
-		ValidatorAddr: validatorAddr,
+func NewMsgMsgInvitationNotCosignedClaim(address sdk.ValAddress, mainchainAddress string, firstCosignerAddress sdk.ValAddress) MsgRequestInvitation {
+	return MsgRequestInvitation{
+		Address:              address,
+		MainchainAddress:     mainchainAddress,
+		FirstCosignerAddress: firstCosignerAddress,
 	}
 }
 
-const invitationNotCosignedConst = "invitationNotCosigned"
+const invitationNotCosignedConst = "invitation_not_cosigned"
 
 // nolint
 func (msg MsgMsgInvitationNotCosignedClaim) Route() string { return RouterKey }
 func (msg MsgMsgInvitationNotCosignedClaim) Type() string  { return invitationNotCosignedConst }
 func (msg MsgMsgInvitationNotCosignedClaim) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.ValidatorAddr)}
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -207,7 +218,7 @@ func (msg MsgMsgInvitationNotCosignedClaim) GetSignBytes() []byte {
 
 // ValidateBasic validity check for the AnteHandler
 func (msg MsgMsgInvitationNotCosignedClaim) ValidateBasic() error {
-	if msg.ValidatorAddr.Empty() {
+	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}
 	return nil

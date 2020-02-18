@@ -12,6 +12,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/cosmos/peggy/x/oracle"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/client/cli"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/client/rest"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
@@ -73,17 +76,24 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 // AppModule implements an application module for the proximax-bridge module.
 type AppModule struct {
 	AppModuleBasic
-
+	Codec  *codec.Codec
 	keeper Keeper
 	// TODO: Add keepers that your application depends on
+	AccountKeeper auth.AccountKeeper
+	SupplyKeeper  supply.Keeper
+	OracleKeeper  oracle.Keeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k Keeper /*TODO: Add Keepers that your application depends on*/) AppModule {
+func NewAppModule(cdc *codec.Codec, k Keeper, accountKeeper auth.AccountKeeper, supplyKeeper supply.Keeper, oracleKeeper oracle.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
+		Codec:          cdc,
 		keeper:         k,
 		// TODO: Add keepers that your application depends on
+		AccountKeeper: accountKeeper,
+		SupplyKeeper:  supplyKeeper,
+		OracleKeeper:  oracleKeeper,
 	}
 }
 
@@ -102,7 +112,7 @@ func (AppModule) Route() string {
 
 // NewHandler returns an sdk.Handler for the proximax-bridge module.
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	return NewHandler(am.Codec, am.AccountKeeper, am.keeper)
 }
 
 // QuerierRoute returns the proximax-bridge module's querier route name.
@@ -120,7 +130,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState GenesisState
 	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	InitGenesis(ctx, am.keeper, am.stakingKeeper, genesisState)
+	InitGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }
 
