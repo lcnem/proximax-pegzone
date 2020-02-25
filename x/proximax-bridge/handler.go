@@ -39,12 +39,12 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 func handleMsgPegClaim(
 	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgPegClaim,
 ) (*sdk.Result, error) {
-	status, err := bridgeKeeper.ProcessClaim(ctx, types.EthBridgeClaim(msg))
+	status, err := bridgeKeeper.ProcessPegClaim(ctx, msg)
 	if err != nil {
 		return nil, err
 	}
 	if status.Text == oracle.SuccessStatusText {
-		if err := bridgeKeeper.ProcessSuccessfulClaim(ctx, status.FinalClaim); err != nil {
+		if err := bridgeKeeper.ProcessSuccessfulPegClaim(ctx, status.FinalClaim); err != nil {
 			return nil, err
 		}
 	}
@@ -59,8 +59,8 @@ func handleMsgPegClaim(
 			types.EventTypeCreateClaim,
 			sdk.NewAttribute(types.AttributeKeyMainchainTxHash, msg.MainchainTxHash),
 			sdk.NewAttribute(types.AttributeKeyCosmosReceiver, msg.Address.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount),
-			sdk.NewAttribute(types.AttributeKeyClaimType, msg.ClaimType.String()),
+			// sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount),
+			// sdk.NewAttribute(types.AttributeKeyClaimType, msg.ClaimType.String()),
 		),
 		sdk.NewEvent(
 			types.EventTypeProphecyStatus,
@@ -76,15 +76,6 @@ func handleMsgUnpeg(
 	bridgeKeeper Keeper, msg MsgUnpeg,
 ) (*sdk.Result, error) {
 
-	account := accountKeeper.GetAccount(ctx, msg.Address)
-	if account == nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Address.String())
-	}
-
-	if err := bridgeKeeper.ProcessBurn(ctx, msg.Address, msg.Amount); err != nil {
-		return nil, err
-	}
-
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -95,7 +86,7 @@ func handleMsgUnpeg(
 			types.EventTypeUnpeg,
 			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
 			sdk.NewAttribute(types.AttributeKeyMainchainReceiver, msg.MainchainAddress),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			// sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 		),
 	})
 
@@ -107,6 +98,15 @@ func handleMsgUnpegNotCosignedClaim(
 	ctx sdk.Context, cdc *codec.Codec, accountKeeper auth.AccountKeeper,
 	bridgeKeeper Keeper, msg MsgUnpegNotCosignedClaim,
 ) (*sdk.Result, error) {
+	status, err := bridgeKeeper.ProcessUnpegNotCosignedClaim(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+	if status.Text == oracle.SuccessStatusText {
+		if err := bridgeKeeper.ProcessSuccessfulUnpegNotCosignedClaim(ctx, status.FinalClaim); err != nil {
+			return nil, err
+		}
+	}
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(

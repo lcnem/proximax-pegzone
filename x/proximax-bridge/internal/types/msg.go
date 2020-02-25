@@ -11,17 +11,15 @@ var _ sdk.Msg = &MsgPegClaim{}
 
 // MsgPegClaim - struct for unjailing jailed validator
 type MsgPegClaim struct {
-	Address         sdk.AccAddress `json:"address" yaml:"address"`
+	Address         sdk.ValAddress `json:"address" yaml:"address"`
 	MainchainTxHash string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
-	Amount          []sdk.Coin     `json:"amount" yaml:"amount"`
 }
 
 // NewMsgPegClaim creates a new MsgPegClaim instance
-func NewMsgPegClaim(address sdk.AccAddress, mainchainTxHash string, amount []sdk.Coin) MsgPegClaim {
+func NewMsgPegClaim(address sdk.ValAddress, mainchainTxHash string) MsgPegClaim {
 	return MsgPegClaim{
 		Address:         address,
 		MainchainTxHash: mainchainTxHash,
-		Amount:          amount,
 	}
 }
 
@@ -31,7 +29,7 @@ const pegClaimConst = "peg_claim"
 func (msg MsgPegClaim) Route() string { return RouterKey }
 func (msg MsgPegClaim) Type() string  { return pegClaimConst }
 func (msg MsgPegClaim) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Address}
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -76,7 +74,7 @@ const unpegConst = "unpeg"
 func (msg MsgUnpeg) Route() string { return RouterKey }
 func (msg MsgUnpeg) Type() string  { return unpegConst }
 func (msg MsgUnpeg) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Address}
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -99,17 +97,15 @@ var _ sdk.Msg = &MsgUnpegNotCosignedClaim{}
 
 // MsgUnpegNotCosignedClaim - struct for unjailing jailed validator
 type MsgUnpegNotCosignedClaim struct {
-	Address              sdk.ValAddress `json:"address" yaml: "address"`
-	TxHash               string         `json:"tx_hash" yaml:"tx_hash"`
-	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
+	Address sdk.ValAddress `json:"address" yaml:"address"`
+	TxHash  string         `json:"tx_hash" yaml:"tx_hash"`
 }
 
 // NewMsgUnpegNotCosignedClaim creates a new MsgUnpegNotCosignedClaim instance
-func NewMsgUnpegNotCosignedClaim(address sdk.ValAddress, txHash string, firstCosignerAddress sdk.ValAddress) MsgUnpegNotCosignedClaim {
+func NewMsgUnpegNotCosignedClaim(address sdk.ValAddress, txHash string) MsgUnpegNotCosignedClaim {
 	return MsgUnpegNotCosignedClaim{
-		Address:              address,
-		TxHash:               txHash,
-		FirstCosignerAddress: firstCosignerAddress,
+		Address: address,
+		TxHash:  txHash,
 	}
 }
 
@@ -143,7 +139,7 @@ var _ sdk.Msg = &MsgRequestInvitation{}
 
 // MsgRequestInvitation - struct for unjailing jailed validator
 type MsgRequestInvitation struct {
-	Address              sdk.ValAddress `json:"address" yaml: "address"`
+	Address              sdk.ValAddress `json:"address" yaml:"address"`
 	MainchainAddress     string         `json:"mainchain_address" yaml:"mainchain_address"`
 	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
@@ -183,41 +179,39 @@ func (msg MsgRequestInvitation) ValidateBasic() error {
 // TODO: Describe your actions, these will implment the interface of `sdk.Msg`
 
 // verify interface at compile time
-var _ sdk.Msg = &MsgMsgInvitationNotCosignedClaim{}
+var _ sdk.Msg = &MsgInvitationNotCosignedClaim{}
 
-// MsgMsgInvitationNotCosignedClaim - struct for unjailing jailed validator
-type MsgMsgInvitationNotCosignedClaim struct {
-	Address              sdk.ValAddress `json:"address" yaml: "address"`
-	MainchainAddress     string         `json:"mainchain_address" yaml:"mainchain_address"`
-	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
+// MsgInvitationNotCosignedClaim - struct for unjailing jailed validator
+type MsgInvitationNotCosignedClaim struct {
+	Address sdk.ValAddress `json:"address" yaml:"address"`
+	TxHash  string         `json:"tx_hash" yaml:"tx_hash"`
 }
 
 // NewMsgMsgInvitationNotCosignedClaim creates a new MsgMsgInvitationNotCosignedClaim instance
-func NewMsgMsgInvitationNotCosignedClaim(address sdk.ValAddress, mainchainAddress string, firstCosignerAddress sdk.ValAddress) MsgRequestInvitation {
-	return MsgRequestInvitation{
-		Address:              address,
-		MainchainAddress:     mainchainAddress,
-		FirstCosignerAddress: firstCosignerAddress,
+func NewMsgMsgInvitationNotCosignedClaim(address sdk.ValAddress, txHash string) MsgInvitationNotCosignedClaim {
+	return MsgInvitationNotCosignedClaim{
+		Address: address,
+		TxHash:  txHash,
 	}
 }
 
 const invitationNotCosignedConst = "invitation_not_cosigned"
 
 // nolint
-func (msg MsgMsgInvitationNotCosignedClaim) Route() string { return RouterKey }
-func (msg MsgMsgInvitationNotCosignedClaim) Type() string  { return invitationNotCosignedConst }
-func (msg MsgMsgInvitationNotCosignedClaim) GetSigners() []sdk.AccAddress {
+func (msg MsgInvitationNotCosignedClaim) Route() string { return RouterKey }
+func (msg MsgInvitationNotCosignedClaim) Type() string  { return invitationNotCosignedConst }
+func (msg MsgInvitationNotCosignedClaim) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
-func (msg MsgMsgInvitationNotCosignedClaim) GetSignBytes() []byte {
+func (msg MsgInvitationNotCosignedClaim) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic validity check for the AnteHandler
-func (msg MsgMsgInvitationNotCosignedClaim) ValidateBasic() error {
+func (msg MsgInvitationNotCosignedClaim) ValidateBasic() error {
 	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}

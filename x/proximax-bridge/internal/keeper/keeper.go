@@ -36,8 +36,8 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // ProcessClaim processes a new claim coming in from a validator
-func (k Keeper) ProcessClaim(ctx sdk.Context, claim types.EthBridgeClaim) (oracle.Status, error) {
-	oracleClaim, err := types.CreateOracleClaimFromEthClaim(k.cdc, claim)
+func (k Keeper) ProcessPegClaim(ctx sdk.Context, claim types.MsgPegClaim) (oracle.Status, error) {
+	oracleClaim, err := types.CreateOracleClaimFromMsgPegClaim(k.cdc, claim)
 	if err != nil {
 		return oracle.Status{}, err
 	}
@@ -46,7 +46,7 @@ func (k Keeper) ProcessClaim(ctx sdk.Context, claim types.EthBridgeClaim) (oracl
 }
 
 // ProcessSuccessfulClaim processes a claim that has just completed successfully with consensus
-func (k Keeper) ProcessSuccessfulClaim(ctx sdk.Context, claim string) error {
+func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 	oracleClaim, err := types.CreateOracleClaimFromOracleString(claim)
 	if err != nil {
 		return err
@@ -74,22 +74,43 @@ func (k Keeper) ProcessSuccessfulClaim(ctx sdk.Context, claim string) error {
 	return nil
 }
 
-// ProcessBurn processes the burn of bridged coins from the given sender
-func (k Keeper) ProcessBurn(ctx sdk.Context, cosmosSender sdk.AccAddress, amount sdk.Coins) error {
-	if err := k.supplyKeeper.SendCoinsFromAccountToModule(
-		ctx, cosmosSender, types.ModuleName, amount,
-	); err != nil {
+
+// ProcessClaim processes a new claim coming in from a validator
+func (k Keeper) ProcessUnpegNotCosignedClaim(ctx sdk.Context, claim types.MsgUnpegNotCosignedClaim) (oracle.Status, error) {
+	oracleClaim, err := types.CreateOracleClaimFromMsgPegClaim(k.cdc, claim)
+	if err != nil {
+		return oracle.Status{}, err
+	}
+
+	return k.oracleKeeper.ProcessClaim(ctx, oracleClaim)
+}
+
+// ProcessSuccessfulClaim processes a claim that has just completed successfully with consensus
+func (k Keeper) ProcessSuccessfulUnpegNotCosignedClaim(ctx sdk.Context, claim string) error {
+	oracleClaim, err := types.CreateOracleClaimFromOracleString(claim)
+	if err != nil {
 		return err
 	}
 
-	if err := k.supplyKeeper.BurnCoins(ctx, types.ModuleName, amount); err != nil {
+	receiverAddress := oracleClaim.CosmosReceiver
+
+	switch oracleClaim.ClaimType {
+	case types.LockText:
+		err = k.supplyKeeper.MintCoins(ctx, types.ModuleName, oracleClaim.Amount)
+	default:
+		err = types.ErrInvalidClaimType
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := k.supplyKeeper.SendCoinsFromModuleToAccount(
+		ctx, types.ModuleName, receiverAddress, oracleClaim.Amount,
+	); err != nil {
 		panic(err)
 	}
 
 	return nil
 }
 
-// ProcessLock processes the lockup of cosmos coins from the given sender
-func (k Keeper) ProcessLock(ctx sdk.Context, cosmosSender sdk.AccAddress, amount sdk.Coins) error {
-	return k.supplyKeeper.SendCoinsFromAccountToModule(ctx, cosmosSender, types.ModuleName, amount)
-}

@@ -9,4 +9,6 @@ import (
 var (
 	ErrInvalidMainchainTxHash  = sdkerrors.Register(ModuleName, 1, "invalid mainchain tx hash")
 	ErrInvalidMainchainAddress = sdkerrors.Register(ModuleName, 2, "invalid mainchain address")
+	ErrJSONMarshalling         = sdkerrors.Register(ModuleName, 3, "error marshalling JSON for this claim")
+	ErrInvalidClaimType        = sdkerrors.Register(ModuleName, 4, "invalid claim type provided")
 )

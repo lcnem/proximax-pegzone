@@ -45,5 +45,5 @@ type (
 	MsgUnpeg                      = types.MsgUnpeg
 	MsgUnpegNotCosignedClaim      = types.MsgUnpegNotCosignedClaim
 	MsgRequestInvitation          = types.MsgRequestInvitation
-	MsgInvitationNotCosignedClaim = types.MsgMsgInvitationNotCosignedClaim
+	MsgInvitationNotCosignedClaim = types.MsgInvitationNotCosignedClaim
 )

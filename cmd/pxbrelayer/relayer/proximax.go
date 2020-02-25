@@ -66,7 +66,7 @@ func partialAddedHandler(account proximax.Account, tx *proximax.AggregateTransac
 		return
 	}
 	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.Transfer {
-		handleTransferTransaction(account, proximax.TransferTransaction(tx.InnerTransactions[0]))
+		handleTransferTransaction(account, proximax.TransferTransaction(*(tx.InnerTransactions[0].GetAbstractTransaction()).(proximax.TransferTransaction)))
 	}
 	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.ModifyMultisig {
 		handleModifyMultisigTransaction(account, proximax.TransferTransaction(tx.InnerTransactions[0]))
