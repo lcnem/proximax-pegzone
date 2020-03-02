@@ -1,7 +1,25 @@
-import { AccAddress, Coin } from "cosmos-client";
+import { AccAddress, Coin, Msg, ValAddress } from "cosmos-client";
 
-export type MsgPegClaim = {
-  mainchain_tx_hash: string;
-  address: AccAddress;
-  amount: Coin[];
-};
+export class MsgPegClaim extends Msg {
+  constructor(
+    public address: ValAddress,
+    public mainchain_tx_hash: string,
+    public to_address: AccAddress,
+    public amount: Coin[]
+  ) {
+    super();
+  }
+
+  /**
+   *
+   * @param value
+   */
+  public static fromJSON(value: any) {
+    return new this(
+      ValAddress.fromBech32(value.address),
+      value.mainchain_tx_hash,
+      AccAddress.fromBech32(value.to_address),
+      value.amount
+    );
+  }
+}
