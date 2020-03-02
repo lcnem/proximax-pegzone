@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cosmos-client": "^0.3.0"
+    "cosmos-client": "^0.3.0",
+    "tsjs-xpx-chain-sdk": "^0.7.0"
   }
 }

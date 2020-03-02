@@ -2,7 +2,17 @@ import { CosmosSDK } from "cosmos-client";
 import { StdTx } from "cosmos-client/x/auth";
 import { UnpegReq, RequestInvitationReq, Cosigner } from "./types";
 
-export async function cosigners(sdk: CosmosSDK) {
+/**
+ * Getting the multisig address on mainchain for collateral.
+ * @param sdk
+ */
+export async function getMultisigAddress(sdk: CosmosSDK) {
+  return await sdk.get<{ mainchain_multisig_address: string }>(
+    "/proximax_bridge/mainchain_multisig_address"
+  );
+}
+
+export async function getCosigners(sdk: CosmosSDK) {
   return await sdk.get<Cosigner[]>("/proximax_bridge/cosigners");
 }
 
