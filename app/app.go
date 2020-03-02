@@ -269,7 +269,7 @@ func NewInitApp(
 
 	// TODO: Add your module(s) keepers
 	app.oracleKeeper = oracle.NewKeeper(app.cdc, keys[oracle.StoreKey], app.stakingKeeper)
-	app.bridgeKeeper = bridge.NewKeeper(app.cdc, keys[bridge.StoreKey])
+	app.bridgeKeeper = bridge.NewKeeper(app.cdc, keys[bridge.StoreKey], app.supplyKeeper, app.slashingKeeper, app.oracleKeeper)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -288,7 +288,7 @@ func NewInitApp(
 		evidence.NewAppModule(app.evidenceKeeper),
 		// TODO: Add your module(s)
 		oracle.NewAppModule(app.oracleKeeper),
-		bridge.NewAppModule(app.bridgeKeeper),
+		bridge.NewAppModule(app.cdc, app.bridgeKeeper, app.accountKeeper, app.supplyKeeper, app.slashingKeeper, app.oracleKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 	)
 	// During begin block slashing happens after distr.BeginBlocker so that
