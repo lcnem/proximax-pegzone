@@ -13,13 +13,17 @@ var _ sdk.Msg = &MsgPegClaim{}
 type MsgPegClaim struct {
 	Address         sdk.ValAddress `json:"address" yaml:"address"`
 	MainchainTxHash string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	ToAddress sdk.AccAddress `json:"to_address" yaml:"to_address"`
+	Amount sdk.Coins `json:"amount" yaml:"amount"`
 }
 
 // NewMsgPegClaim creates a new MsgPegClaim instance
-func NewMsgPegClaim(address sdk.ValAddress, mainchainTxHash string) MsgPegClaim {
+func NewMsgPegClaim(address sdk.ValAddress, mainchainTxHash string, toAddress sdk.AccAddress, amount sdk.Coins) MsgPegClaim {
 	return MsgPegClaim{
 		Address:         address,
 		MainchainTxHash: mainchainTxHash,
+		ToAddress: toAddress,
+		Amount: amount,
 	}
 }
 
@@ -54,12 +58,12 @@ var _ sdk.Msg = &MsgUnpeg{}
 type MsgUnpeg struct {
 	Address              sdk.AccAddress `json:"address" yaml:"address"`
 	MainchainAddress     string         `json:"mainchain_address" yaml:"mainchain_address"`
-	Amount               []sdk.Coin     `json:"amount" yaml:"amount"`
+	Amount               sdk.Coins     `json:"amount" yaml:"amount"`
 	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 // NewMsgUnpeg creates a new MsgUnpeg instance
-func NewMsgUnpeg(address sdk.AccAddress, mainchainAddress string, amount []sdk.Coin, firstCosignerAddress sdk.ValAddress) MsgUnpeg {
+func NewMsgUnpeg(address sdk.AccAddress, mainchainAddress string, amount sdk.Coins, firstCosignerAddress sdk.ValAddress) MsgUnpeg {
 	return MsgUnpeg{
 		Address:              address,
 		MainchainAddress:     mainchainAddress,
@@ -99,13 +103,15 @@ var _ sdk.Msg = &MsgUnpegNotCosignedClaim{}
 type MsgUnpegNotCosignedClaim struct {
 	Address sdk.ValAddress `json:"address" yaml:"address"`
 	TxHash  string         `json:"tx_hash" yaml:"tx_hash"`
+	NotCosignedValidators []sdk.ValAddress `json:"not_cosigned_validators" yaml:"not_cosigned_validators"`
 }
 
 // NewMsgUnpegNotCosignedClaim creates a new MsgUnpegNotCosignedClaim instance
-func NewMsgUnpegNotCosignedClaim(address sdk.ValAddress, txHash string) MsgUnpegNotCosignedClaim {
+func NewMsgUnpegNotCosignedClaim(address sdk.ValAddress, txHash string, notCosignedValidators []sdk.ValAddress) MsgUnpegNotCosignedClaim {
 	return MsgUnpegNotCosignedClaim{
 		Address: address,
 		TxHash:  txHash,
+		NotCosignedValidators: notCosignedValidators,
 	}
 }
 
@@ -185,13 +191,15 @@ var _ sdk.Msg = &MsgInvitationNotCosignedClaim{}
 type MsgInvitationNotCosignedClaim struct {
 	Address sdk.ValAddress `json:"address" yaml:"address"`
 	TxHash  string         `json:"tx_hash" yaml:"tx_hash"`
+	NotCosignedValidators []sdk.ValAddress `json:"not_cosigned_validators" yaml:"not_cosigned_validators"`
 }
 
 // NewMsgMsgInvitationNotCosignedClaim creates a new MsgMsgInvitationNotCosignedClaim instance
-func NewMsgMsgInvitationNotCosignedClaim(address sdk.ValAddress, txHash string) MsgInvitationNotCosignedClaim {
+func NewMsgMsgInvitationNotCosignedClaim(address sdk.ValAddress, txHash string, notCosignedValidators []sdk.ValAddress) MsgInvitationNotCosignedClaim {
 	return MsgInvitationNotCosignedClaim{
 		Address: address,
 		TxHash:  txHash,
+		NotCosignedValidators: notCosignedValidators,
 	}
 }
 

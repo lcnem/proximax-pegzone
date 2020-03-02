@@ -19,7 +19,17 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) []abci.Vali
 // to a genesis file, which can be imported again
 // with InitGenesis
 func ExportGenesis(ctx sdk.Context, k Keeper) (data types.GenesisState) {
+	mainchainMultisigAddress, err := k.GetMainchainMultisigAddress(ctx)
+	if err != nil {
+		mainchainMultisigAddress = ""
+	}
+	cosigners, err := k.GetCosigners(ctx)
+	if err != nil {
+		cosigners = []types.Cosigner{}
+	}
 
 	// TODO: Define logic for exporting state
-	return types.NewGenesisState()
+	return types.NewGenesisState(
+		mainchainMultisigAddress, cosigners,
+	)
 }

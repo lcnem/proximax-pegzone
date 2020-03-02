@@ -31,6 +31,10 @@ type SupplyKeeper interface {
 	SetModuleAccount(sdk.Context, supplyexported.ModuleAccountI)
 }
 
+type SlashingKeeper interface {
+	Slash(ctx sdk.Context, consAddr sdk.ConsAddress, fraction sdk.Dec, power int64, distributionHeight int64)
+}
+
 // OracleKeeper defines the expected oracle keeper
 type OracleKeeper interface {
 	ProcessClaim(ctx sdk.Context, claim oracle.Claim) (oracle.Status, error)

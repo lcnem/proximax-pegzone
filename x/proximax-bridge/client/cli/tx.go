@@ -2,23 +2,18 @@ package cli
 
 import (
 	"fmt"
-	"bufio"
 
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	proximax-bridgeTxCmd := &cobra.Command{
+	proximaxbridgeTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%S transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -26,12 +21,12 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	proximax-bridgeTxCmd.AddCommand(flags.PostCommands(
-		// TODO: Add tx based commands
-		// GetCmd<Action>(cdc)
+	proximaxbridgeTxCmd.AddCommand(flags.PostCommands(
+	// TODO: Add tx based commands
+	// GetCmd<Action>(cdc)
 	)...)
 
-	return proximax-bridgeTxCmd
+	return proximaxbridgeTxCmd
 }
 
 // Example:

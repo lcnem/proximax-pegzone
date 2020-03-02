@@ -13,6 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/cosmos/peggy/x/oracle"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/client/cli"
@@ -79,21 +80,23 @@ type AppModule struct {
 	Codec  *codec.Codec
 	keeper Keeper
 	// TODO: Add keepers that your application depends on
-	AccountKeeper auth.AccountKeeper
-	SupplyKeeper  supply.Keeper
-	OracleKeeper  oracle.Keeper
+	AccountKeeper  auth.AccountKeeper
+	SupplyKeeper   supply.Keeper
+	SlashingKeeper slashing.Keeper
+	OracleKeeper   oracle.Keeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(cdc *codec.Codec, k Keeper, accountKeeper auth.AccountKeeper, supplyKeeper supply.Keeper, oracleKeeper oracle.Keeper) AppModule {
+func NewAppModule(cdc *codec.Codec, k Keeper, accountKeeper auth.AccountKeeper, supplyKeeper supply.Keeper, slashingKeeper slashing.Keeper, oracleKeeper oracle.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		Codec:          cdc,
 		keeper:         k,
 		// TODO: Add keepers that your application depends on
-		AccountKeeper: accountKeeper,
-		SupplyKeeper:  supplyKeeper,
-		OracleKeeper:  oracleKeeper,
+		AccountKeeper:  accountKeeper,
+		SupplyKeeper:   supplyKeeper,
+		SlashingKeeper: slashingKeeper,
+		OracleKeeper:   oracleKeeper,
 	}
 }
 

@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"bytes"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -10,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
 )
 
 func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router) {
@@ -18,6 +16,27 @@ func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	// TODO: Define the Rest route ,
 	// Call the function which should be executed for this route),
 	// ).Methods("POST")
+}
+
+type UnpegReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	// TODO: Define more types if needed
+}
+
+func UnpegRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req UnpegReq
+		vars := mux.Vars(r)
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		// TODO: Define the module tx logic for this action
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, BaseReq, []sdk.Msg{msg})
+	}
 }
 
 /*

@@ -1,13 +1,17 @@
 package types
 
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 // Query endpoints supported by the proximax-bridge querier
 const (
 	//TODO: Describe query parameters, update <action> with your query
 	// Query<Action>    = "<action>"
+	QueryCosigners = "cosigners"
 )
 
-/* 
+/*
 Below you will be able how to set your own queries:
 
 
@@ -20,3 +24,8 @@ func (n QueryResList) String() string {
 }
 
 */
+
+type Cosigner struct {
+	ValidatorAddress sdk.ValAddress `json:"validator_address"`
+	MainchainAddress string         `json:"mainchain_address"`
+}

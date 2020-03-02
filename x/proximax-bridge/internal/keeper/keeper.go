@@ -13,19 +13,21 @@ import (
 
 // Keeper of the proximax-bridge store
 type Keeper struct {
-	storeKey     sdk.StoreKey
-	cdc          *codec.Codec
-	supplyKeeper types.SupplyKeeper
-	oracleKeeper types.OracleKeeper
+	storeKey       sdk.StoreKey
+	cdc            *codec.Codec
+	supplyKeeper   types.SupplyKeeper
+	slashingKeeper types.SlashingKeeper
+	oracleKeeper   types.OracleKeeper
 }
 
 // NewKeeper creates a proximax-bridge keeper
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, oracleKeeper types.OracleKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, slashingKeeper types.SlashingKeeper, oracleKeeper types.OracleKeeper) Keeper {
 	keeper := Keeper{
-		storeKey:     key,
-		cdc:          cdc,
-		supplyKeeper: supplyKeeper,
-		oracleKeeper: oracleKeeper,
+		storeKey:       key,
+		cdc:            cdc,
+		supplyKeeper:   supplyKeeper,
+		slashingKeeper: slashingKeeper,
+		oracleKeeper:   oracleKeeper,
 	}
 	return keeper
 }
@@ -33,6 +35,14 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeep
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+func (k Keeper) GetMainchainMultisigAddress(ctx sdk.Context) (string, error) {
+	return "", nil
+}
+
+func (k Keeper) GetCosigners(ctx sdk.Context) ([]types.Cosigner, error) {
+	return []types.Cosigner{}, nil
 }
 
 // ProcessClaim processes a new claim coming in from a validator
@@ -47,26 +57,19 @@ func (k Keeper) ProcessPegClaim(ctx sdk.Context, claim types.MsgPegClaim) (oracl
 
 // ProcessSuccessfulClaim processes a claim that has just completed successfully with consensus
 func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
-	oracleClaim, err := types.CreateOracleClaimFromOracleString(claim)
+	oracleClaim, err := types.CreateMsgPegClaimFromOracleString(claim)
 	if err != nil {
 		return err
 	}
 
-	receiverAddress := oracleClaim.CosmosReceiver
-
-	switch oracleClaim.ClaimType {
-	case types.LockText:
-		err = k.supplyKeeper.MintCoins(ctx, types.ModuleName, oracleClaim.Amount)
-	default:
-		err = types.ErrInvalidClaimType
-	}
+	err = k.supplyKeeper.MintCoins(ctx, types.ModuleName, oracleClaim.Amount)
 
 	if err != nil {
 		return err
 	}
 
 	if err := k.supplyKeeper.SendCoinsFromModuleToAccount(
-		ctx, types.ModuleName, receiverAddress, oracleClaim.Amount,
+		ctx, types.ModuleName, oracleClaim.ToAddress, oracleClaim.Amount,
 	); err != nil {
 		panic(err)
 	}
@@ -74,10 +77,9 @@ func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 	return nil
 }
 
-
 // ProcessClaim processes a new claim coming in from a validator
 func (k Keeper) ProcessUnpegNotCosignedClaim(ctx sdk.Context, claim types.MsgUnpegNotCosignedClaim) (oracle.Status, error) {
-	oracleClaim, err := types.CreateOracleClaimFromMsgPegClaim(k.cdc, claim)
+	oracleClaim, err := types.CreateOracleClaimFromMsgUnpegNotCosignedClaim(k.cdc, claim)
 	if err != nil {
 		return oracle.Status{}, err
 	}
@@ -87,30 +89,38 @@ func (k Keeper) ProcessUnpegNotCosignedClaim(ctx sdk.Context, claim types.MsgUnp
 
 // ProcessSuccessfulClaim processes a claim that has just completed successfully with consensus
 func (k Keeper) ProcessSuccessfulUnpegNotCosignedClaim(ctx sdk.Context, claim string) error {
-	oracleClaim, err := types.CreateOracleClaimFromOracleString(claim)
+	oracleClaim, err := types.CreateMsgUnpegNotCosignedClaimFromOracleString(claim)
 	if err != nil {
 		return err
 	}
 
-	receiverAddress := oracleClaim.CosmosReceiver
-
-	switch oracleClaim.ClaimType {
-	case types.LockText:
-		err = k.supplyKeeper.MintCoins(ctx, types.ModuleName, oracleClaim.Amount)
-	default:
-		err = types.ErrInvalidClaimType
-	}
-
-	if err != nil {
-		return err
-	}
-
-	if err := k.supplyKeeper.SendCoinsFromModuleToAccount(
-		ctx, types.ModuleName, receiverAddress, oracleClaim.Amount,
-	); err != nil {
-		panic(err)
+	for _, notCosignedValidator := range oracleClaim.NotCosignedValidators {
+		k.slashingKeeper.Slash(ctx, sdk.ConsAddress(notCosignedValidator), sdk.NewDec(0), 0, 0)
 	}
 
 	return nil
 }
 
+// ProcessClaim processes a new claim coming in from a validator
+func (k Keeper) ProcessInvitationNotCosignedClaim(ctx sdk.Context, claim types.MsgInvitationNotCosignedClaim) (oracle.Status, error) {
+	oracleClaim, err := types.CreateOracleClaimFromMsgInvitationNotCosignedClaim(k.cdc, claim)
+	if err != nil {
+		return oracle.Status{}, err
+	}
+
+	return k.oracleKeeper.ProcessClaim(ctx, oracleClaim)
+}
+
+// ProcessSuccessfulClaim processes a claim that has just completed successfully with consensus
+func (k Keeper) ProcessSuccessfulInvitationNotCosignedClaim(ctx sdk.Context, claim string) error {
+	oracleClaim, err := types.CreateMsgInvitationNotCosignedClaimFromOracleString(claim)
+	if err != nil {
+		return err
+	}
+
+	for _, notCosignedValidator := range oracleClaim.NotCosignedValidators {
+		k.slashingKeeper.Slash(ctx, sdk.ConsAddress(notCosignedValidator), sdk.NewDec(0), 0, 0)
+	}
+
+	return nil
+}
