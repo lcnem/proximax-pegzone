@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
 )
 
 func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router) {
@@ -21,21 +22,64 @@ func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router) {
 type UnpegReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// TODO: Define more types if needed
+	Address string `json:"address" yaml:"address"`
+	MainchainAddress string `json:"mainchain_address" yaml:"mainchain_address"`
+	Amount sdk.Coins `json:"amount" yaml:"amount"`
+	FirstCosignerAddress string `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 func UnpegRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req UnpegReq
-		vars := mux.Vars(r)
 
 		baseReq := req.BaseReq.Sanitize()
 		if !baseReq.ValidateBasic(w) {
 			return
 		}
 
-		// TODO: Define the module tx logic for this action
+		address, _ := sdk.AccAddressFromBech32( req.Address)
+		firstCosignerAddress, _ := sdk.ValAddressFromBech32(req.FirstCosignerAddress)
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, BaseReq, []sdk.Msg{msg})
+		// TODO: Define the module tx logic for this action
+		msg:=  types.NewMsgUnpeg(
+			address,
+			req.MainchainAddress,
+			req.Amount,
+			firstCosignerAddress,
+		)
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+type RequestInvitationReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	// TODO: Define more types if needed
+	Address string `json:"address" yaml:"address"`
+	MainchainAddress string `json:"mainchain_address" yaml:"mainchain_address"`
+	FirstCosignerAddress string `json:"first_cosigner_address" yaml:"first_cosigner_address"`
+}
+
+func RequestInvitationRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req RequestInvitationReq
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		address, _ := sdk.ValAddressFromBech32( req.Address)
+		firstCosignerAddress, _ := sdk.ValAddressFromBech32(req.FirstCosignerAddress)
+
+		// TODO: Define the module tx logic for this action
+		msg := types.NewMsgRequestInvitation(
+			address,
+			req.MainchainAddress,
+			firstCosignerAddress,
+		)
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
 	}
 }
 

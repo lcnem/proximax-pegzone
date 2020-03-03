@@ -8,7 +8,8 @@ import (
 const (
 	//TODO: Describe query parameters, update <action> with your query
 	// Query<Action>    = "<action>"
-	QueryCosigners = "cosigners"
+	QueryMainchainMultisigAddress = "mainchain_multisig_address"
+	QueryCosigners                = "cosigners"
 )
 
 /*
@@ -24,6 +25,10 @@ func (n QueryResList) String() string {
 }
 
 */
+
+type QueryResMainchainMultisigAddress struct {
+	MainchainMultisigAddress string `json:"mainchain_multisig_address"`
+}
 
 type Cosigner struct {
 	ValidatorAddress sdk.ValAddress `json:"validator_address"`
