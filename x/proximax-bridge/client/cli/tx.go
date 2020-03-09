@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
@@ -37,15 +38,25 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "unpeg",
+		Use:   "unpeg [key_or_address] [amount] [mainchain_address] [first_cosigner_address]",
 		Short: "Unpeg",
-		Args:  cobra.ExactArgs(2), // Does your request require arguments
+		Args:  cobra.ExactArgs(4), // Does your request require arguments
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
+			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgUnpeg()
+			coins, err := sdk.ParseCoins(args[2])
+			if err != nil {
+				return err
+			}
+
+			firstCosignerAddress, err := sdk.ValAddressFromBech32(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgUnpeg(cliCtx.GetFromAddress(), args[1], coins, firstCosignerAddress)
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -58,15 +69,20 @@ func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdRequestInvitation(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "request-invitation",
+		Use:   "request-invitation [from_key_or_address] [mainchain_address] [first_cosigner_address]",
 		Short: "Request invitation for multisig cosigner",
-		Args:  cobra.ExactArgs(2), // Does your request require arguments
+		Args:  cobra.ExactArgs(3), // Does your request require arguments
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
+			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgRequestInvitation()
+			firstCosignerAddress, err := sdk.ValAddressFromBech32(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgRequestInvitation(sdk.ValAddress(cliCtx.FromAddress), args[1], firstCosignerAddress)
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
