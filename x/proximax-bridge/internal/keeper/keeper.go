@@ -15,16 +15,18 @@ import (
 type Keeper struct {
 	storeKey       sdk.StoreKey
 	cdc            *codec.Codec
+	paramspace     types.ParamSubspace
 	supplyKeeper   types.SupplyKeeper
 	slashingKeeper types.SlashingKeeper
 	oracleKeeper   types.OracleKeeper
 }
 
 // NewKeeper creates a proximax-bridge keeper
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, slashingKeeper types.SlashingKeeper, oracleKeeper types.OracleKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramspace types.ParamSubspace, supplyKeeper types.SupplyKeeper, slashingKeeper types.SlashingKeeper, oracleKeeper types.OracleKeeper) Keeper {
 	keeper := Keeper{
 		storeKey:       key,
 		cdc:            cdc,
+		paramspace:     paramspace.WithKeyTable(types.ParamKeyTable()),
 		supplyKeeper:   supplyKeeper,
 		slashingKeeper: slashingKeeper,
 		oracleKeeper:   oracleKeeper,
@@ -35,14 +37,6 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeep
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-func (k Keeper) GetMainchainMultisigAddress(ctx sdk.Context) (string, error) {
-	return "", nil
-}
-
-func (k Keeper) GetCosigners(ctx sdk.Context) ([]types.Cosigner, error) {
-	return []types.Cosigner{}, nil
 }
 
 // ProcessClaim processes a new claim coming in from a validator

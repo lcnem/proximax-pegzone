@@ -1,8 +1,9 @@
 package types
 
 import (
-	"fmt"
+	"encoding/json"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 )
 
@@ -16,6 +17,7 @@ const (
 var (
 	// TODO: Define your keys for the parameter store
 	// KeyParamName          = []byte("ParamName")
+	KeyMainchainMultisigAddress = []byte("MainchainMultisigAddress")
 )
 
 // ParamKeyTable for proximax-bridge module
@@ -27,21 +29,32 @@ func ParamKeyTable() params.KeyTable {
 type Params struct {
 	// TODO: Add your Paramaters to the Paramter struct
 	// KeyParamName string `json:"key_param_name"`
+	MainchainMultisigAddress string     `json:"mainchain_multisig_address"`
+	Cosigners                []Cosigner `json:"cosigners"`
+}
+
+type Cosigner struct {
+	ValidatorAddress sdk.ValAddress `json:"validator_address"`
+	MainchainAddress string         `json:"mainchain_address"`
 }
 
 // NewParams creates a new Params object
-func NewParams(/* TODO: Pass in the paramters*/) Params {
+func NewParams(mainchainMultisigAddress string, cosigners []Cosigner) Params {
 
 	return Params{
 		// TODO: Create your Params Type
+		MainchainMultisigAddress: mainchainMultisigAddress,
+		Cosigners:                cosigners,
 	}
 }
 
 // String implements the stringer interface for Params
 func (p Params) String() string {
-	return fmt.Sprintf(`
-	// TODO: Return all the params as a string
-	`, )
+	value, err := json.Marshal(p)
+	if err != nil {
+		return ""
+	}
+	return string(value)
 }
 
 // ParamSetPairs - Implements params.ParamSet
@@ -49,12 +62,11 @@ func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		// TODO: Pair your key with the param
 		// params.NewParamSetPair(KeyParamName, &p.ParamName),
+		params.NewParamSetPair(KeyMainchainMultisigAddress, &p.MainchainMultisigAddress, func(value interface{}) error { return nil }),
 	}
 }
 
 // DefaultParams defines the parameters for this module
 func DefaultParams() Params {
-	return NewParams(
-		// TODO: Pass in your default Params
-	)
+	return NewParams("", []Cosigner{})
 }

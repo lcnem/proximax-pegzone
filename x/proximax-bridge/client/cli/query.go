@@ -27,7 +27,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	proximaxbridgeQueryCmd.AddCommand(
 		flags.GetCommands(
 			// TODO: Add query Cmds
-			GetCmdQueryMainchainMultisigAddress(queryRoute, cdc),
+			GetCmdQueryParams(queryRoute, cdc),
 		)...,
 	)
 
@@ -36,36 +36,15 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 }
 
 // TODO: Add Query Commands
-func GetCmdQueryMainchainMultisigAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
+func GetCmdQueryParams(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "mainchain-multisig-address",
-		Short: "Get the mainchain multisig address for collateral",
+		Use:   "parameters",
+		Short: "Get the parameters",
 		Args:  cobra.ExactArgs(0), // Does your request require arguments
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryMainchainMultisigAddress), nil)
-			if err != nil {
-				fmt.Printf(err.Error())
-				return nil
-			}
-
-			var out map[string]string
-			cdc.MustUnmarshalJSON(res, &out)
-			return cliCtx.PrintOutput(out)
-		},
-	}
-}
-
-func GetCmdQueryCosigners(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "mainchain-multisig-address",
-		Short: "Get the mainchain cosigners of multisig address",
-		Args:  cobra.ExactArgs(0), // Does your request require arguments
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryCosigners), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryParams), nil)
 			if err != nil {
 				fmt.Printf(err.Error())
 				return nil
