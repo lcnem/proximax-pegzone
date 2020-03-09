@@ -1,4 +1,4 @@
-export * from "./cosigner";
+export * from "./params";
 export * from "./msg-invitation-not-cosigned-claim";
 export * from "./msg-peg-claim";
 export * from "./msg-request-invitation";
