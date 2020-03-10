@@ -12,10 +12,11 @@ import (
 )
 
 func InitCosmosRelayer(
-	tendermintProvider string,
+	tendermintNode string,
+	proximaxNode string,
 ) error {
 	logger := tmLog.NewTMLogger(tmLog.NewSyncWriter(os.Stdout))
-	client, err := tmClient.NewHTTP(tendermintProvider, "/websocket")
+	client, err := tmClient.NewHTTP(tendermintNode, "/websocket")
 
 	client.SetLogger(logger)
 

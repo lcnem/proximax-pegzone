@@ -13,17 +13,14 @@ import (
 
 func InitProximaXRelayer(
 	cdc *codec.Codec,
-	chainID string,
-	provider string,
-	makeClaims bool,
-	validatorName string,
-	passphrase string,
-	validatorAddress sdk.ValAddress,
 	cliContext sdkContext.CLIContext,
+	proximaxNode string,
+	chainID string,
 	rpcURL string,
-	custodyAddress string,
+	validatorName string,
+	validatorAddress sdk.ValAddress,
+	proximaxPrivateKey string,
 	test bool,
-	account proximax.Account,
 ) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*30)
 
@@ -66,10 +63,10 @@ func partialAddedHandler(account proximax.Account, tx *proximax.AggregateTransac
 		return
 	}
 	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.Transfer {
-		handleTransferTransaction(account, proximax.TransferTransaction(*(tx.InnerTransactions[0].GetAbstractTransaction()).(proximax.TransferTransaction)))
+		handleTransferTransaction(account, proximax.TransferTransaction(tx.InnerTransactions[0].GetAbstractTransaction()))
 	}
 	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.ModifyMultisig {
-		handleModifyMultisigTransaction(account, proximax.TransferTransaction(tx.InnerTransactions[0]))
+		handleModifyMultisigTransaction(account, proximax.ModifyMultisigAccountTransaction(tx.InnerTransactions[0].GetAbstractTransaction()))
 	}
 }
 
