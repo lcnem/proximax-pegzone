@@ -79,6 +79,7 @@ var (
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		gov.ModuleName:            {supply.Burner},
+		bridge.ModuleName:         {supply.Burner, supply.Staking},
 	}
 )
 
@@ -181,6 +182,7 @@ func NewInitApp(
 	app.subspaces[gov.ModuleName] = app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
 	app.subspaces[crisis.ModuleName] = app.paramsKeeper.Subspace(crisis.DefaultParamspace)
 	app.subspaces[evidence.ModuleName] = app.paramsKeeper.Subspace(evidence.DefaultParamspace)
+	app.subspaces[bridge.ModuleName] = app.paramsKeeper.Subspace(bridge.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -268,8 +270,8 @@ func NewInitApp(
 	)
 
 	// TODO: Add your module(s) keepers
-	app.oracleKeeper = oracle.NewKeeper(app.cdc, keys[oracle.StoreKey], app.stakingKeeper)
-	app.bridgeKeeper = bridge.NewKeeper(app.cdc, keys[bridge.StoreKey], app.supplyKeeper, app.slashingKeeper, app.oracleKeeper)
+	app.oracleKeeper = oracle.NewKeeper(app.cdc, keys[oracle.StoreKey], app.stakingKeeper, oracle.DefaultConsensusNeeded)
+	app.bridgeKeeper = bridge.NewKeeper(app.cdc, keys[bridge.StoreKey], app.subspaces[bridge.ModuleName], app.supplyKeeper, app.slashingKeeper, app.oracleKeeper)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
