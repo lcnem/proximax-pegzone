@@ -20,8 +20,10 @@ func InitProximaXRelayer(
 	validatorName string,
 	validatorAddress sdk.ValAddress,
 	proximaxPrivateKey string,
+	proximaxMultisigAddress string,
 	test bool,
 ) error {
+
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*30)
 
 	conf, err := proximax.NewConfig(ctx, []string{""})
@@ -35,21 +37,34 @@ func InitProximaXRelayer(
 		conf.NetworkType = proximax.Public
 	}
 
+	var generationHash proximax.Hash
+	if test {
+		generationHash = proximax.Hash{}
+	} else {
+		generationHash = proximax.Hash{}
+	}
+
+	account, err := proximax.NewAccountFromPrivateKey(proximaxPrivateKey, conf.NetworkType, &generationHash)
+	if err != nil {
+		return err
+	}
+
+	address, err := proximax.NewAddressFromRaw(proximaxMultisigAddress)
+	if err != nil {
+		return err
+	}
+
 	client, err := websocket.NewClient(ctx, conf)
 	if err != nil {
 		return err
 	}
-	go client.Listen()
 
-	address, err := proximax.NewAddressFromRaw(custodyAddress)
-	if err != nil {
-		return err
-	}
-
-	err = client.AddPartialAddedHandlers(account.Address, func(tx *proximax.AggregateTransaction) bool {
-		partialAddedHandler(account, tx)
+	err = client.AddPartialAddedHandlers(address, func(tx *proximax.AggregateTransaction) bool {
+		partialAddedHandler(*account, tx)
 		return false
 	})
+
+	go client.Listen()
 
 	for {
 
@@ -63,10 +78,16 @@ func partialAddedHandler(account proximax.Account, tx *proximax.AggregateTransac
 		return
 	}
 	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.Transfer {
-		handleTransferTransaction(account, proximax.TransferTransaction(tx.InnerTransactions[0].GetAbstractTransaction()))
+		handleTransferTransaction(
+			account,
+			(*tx.InnerTransactions[0].GetAbstractTransaction()).(proximax.TransferTransaction),
+		)
 	}
 	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.ModifyMultisig {
-		handleModifyMultisigTransaction(account, proximax.ModifyMultisigAccountTransaction(tx.InnerTransactions[0].GetAbstractTransaction()))
+		handleModifyMultisigTransaction(
+			account,
+			proximax.ModifyMultisigAccountTransaction(*(tx.InnerTransactions[0].GetAbstractTransaction())),
+		)
 	}
 }
 

@@ -78,9 +78,9 @@ var initCmd = &cobra.Command{
 
 func proximaxRelayerCmd() *cobra.Command {
 	ethereumRelayerCmd := &cobra.Command{
-		Use:     "proximax [proximax_node] [validator_from_name] --chain-id [chain-id]",
+		Use:     "proximax [proximax_node] [validator_from_name] [proximax_private_key] [proximax_multisig_address] --chain-id [chain-id]",
 		Short:   "Initializes a web socket which streams live events from the ProximaX network and relays them to the Cosmos network",
-		Args:    cobra.ExactArgs(3),
+		Args:    cobra.ExactArgs(4),
 		Example: "pxbrelayer init proximax http://localhost:7545 validator --chain-id=testing",
 		RunE:    RunProximaxRelayerCmd,
 	}
@@ -126,7 +126,7 @@ func RunProximaxRelayerCmd(cmd *cobra.Command, args []string) error {
 		WithFromAddress(sdk.AccAddress(validatorAddress)).
 		WithFromName(validatorName)
 
-	return relayer.InitProximaXRelayer(appCodec, cliCtx, args[0], chainID, rpcURL, validatorName, validatorAddress, "", false)
+	return relayer.InitProximaXRelayer(appCodec, cliCtx, args[0], chainID, rpcURL, validatorName, validatorAddress, args[2], args[3], false)
 }
 
 // RunCosmosRelayerCmd executes the initCosmosRelayerCmd with the provided parameters
