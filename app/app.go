@@ -216,6 +216,15 @@ func NewInitApp(
 		app.subspaces[staking.ModuleName],
 	)
 
+	app.mintKeeper = mint.NewKeeper(
+		app.cdc,
+		keys[mint.StoreKey],
+		app.subspaces[mint.ModuleName],
+		&stakingKeeper,
+		app.supplyKeeper,
+		auth.FeeCollectorName,
+	)
+
 	app.distrKeeper = distr.NewKeeper(
 		app.cdc,
 		keys[distr.StoreKey],
@@ -285,13 +294,13 @@ func NewInitApp(
 		mint.NewAppModule(app.mintKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
-		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
-		upgrade.NewAppModule(app.upgradeKeeper),
-		evidence.NewAppModule(app.evidenceKeeper),
 		// TODO: Add your module(s)
 		oracle.NewAppModule(app.oracleKeeper),
 		bridge.NewAppModule(app.cdc, app.bridgeKeeper, app.accountKeeper, app.supplyKeeper, app.slashingKeeper, app.oracleKeeper),
+
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		upgrade.NewAppModule(app.upgradeKeeper),
+		evidence.NewAppModule(app.evidenceKeeper),
 	)
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
@@ -312,6 +321,9 @@ func NewInitApp(
 		gov.ModuleName,
 		mint.ModuleName,
 		// TODO: Add your module(s)
+		oracle.ModuleName,
+		bridge.ModuleName,
+
 		supply.ModuleName,
 		crisis.ModuleName,
 		genutil.ModuleName,
