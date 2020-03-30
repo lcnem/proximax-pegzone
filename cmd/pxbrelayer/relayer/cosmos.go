@@ -53,11 +53,31 @@ func InitCosmosRelayer(
 			// Iterate over each event inside of the transaction
 			for _, event := range tx.Result.Events {
 				switch event.Type {
-
+				case "peg_claim":
+					handlePegClaim()
+					break
+				case "unpeg_not_cosigned_claim":
+					handleUnpegNotCosignedClaim()
+					break
+				case "invitation_not_cosigned_claim":
+					handleUnpegNotCosignedClaim()
+					break
 				}
 			}
 		case <-quit:
 			os.Exit(0)
 		}
 	}
+}
+
+func handlePegClaim() {
+
+}
+
+func handleUnpegNotCosignedClaim() {
+
+}
+
+func handleInvitationNotCosignedClaim() {
+
 }

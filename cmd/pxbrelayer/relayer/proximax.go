@@ -71,30 +71,20 @@ func InitProximaXRelayer(
 	}
 
 	cancel()
+
+	return nil
 }
 
 func partialAddedHandler(account proximax.Account, tx *proximax.AggregateTransaction) {
 	if len(tx.InnerTransactions) != 1 {
 		return
 	}
-	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.Transfer {
-		handleTransferTransaction(
-			account,
-			(*tx.InnerTransactions[0].GetAbstractTransaction()).(proximax.TransferTransaction),
-		)
+	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.Transfer || tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.ModifyMultisig {
+		cosignatureTransaction := proximax.NewCosignatureTransactionFromHash(tx.AggregateHash)
+		signedTransaction, err := account.SignCosignatureTransaction(cosignatureTransaction)
+
+		if err != nil {
+			return
+		}
 	}
-	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.ModifyMultisig {
-		handleModifyMultisigTransaction(
-			account,
-			proximax.ModifyMultisigAccountTransaction(*(tx.InnerTransactions[0].GetAbstractTransaction())),
-		)
-	}
-}
-
-func handleTransferTransaction(account proximax.Account, tx proximax.TransferTransaction) {
-
-}
-
-func handleModifyMultisigTransaction(account proximax.Account, tx proximax.TransferTransaction) {
-
 }
