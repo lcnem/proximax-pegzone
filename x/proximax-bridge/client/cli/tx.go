@@ -46,7 +46,7 @@ func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			coins, err := sdk.ParseCoins(args[2])
+			coins, err := sdk.ParseCoins(args[1])
 			if err != nil {
 				return err
 			}
@@ -56,7 +56,7 @@ func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgUnpeg(cliCtx.GetFromAddress(), args[1], coins, firstCosignerAddress)
+			msg := types.NewMsgUnpeg(cliCtx.GetFromAddress(), args[2], coins, firstCosignerAddress)
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
