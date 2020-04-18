@@ -1,24 +1,24 @@
 package txs
 
 import (
-	"github.com/cosmos/cosmos-sdk/client/context"
+	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/cosmos/peggy/x/ethbridge"
-	"github.com/cosmos/peggy/x/ethbridge/types"
-	"github.com/gogo/protobuf/codec"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	types "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
+	amino "github.com/tendermint/go-amino"
 )
 
 func RelayPeg(
 	chainID string,
-	cdc *codec.Codec,
-	validatorAddress sdk.ValAddress,
+	cdc *amino.Codec,
 	moniker string,
-	cliCtx context.CLIContext,
-	claim *types.EthBridgeClaim,
+	msg *types.MsgPegClaim,
 	rpcURL string,
 ) error {
 
+	cliCtx := sdkContext.NewCLIContext()
 	if rpcURL != "" {
 		cliCtx = cliCtx.WithNodeURI(rpcURL)
 	}
@@ -31,12 +31,10 @@ func RelayPeg(
 
 	accountRetriever := authtypes.NewAccountRetriever(cliCtx)
 
-	err := accountRetriever.EnsureExists((sdk.AccAddress(claim.ValidatorAddress)))
+	err := accountRetriever.EnsureExists((sdk.AccAddress(msg.ToAddress)))
 	if err != nil {
 		return err
 	}
-
-	msg := ethbridge.NewMsgCreateEthBridgeClaim(*claim)
 
 	err = msg.ValidateBasic()
 	if err != nil {

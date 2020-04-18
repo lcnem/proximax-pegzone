@@ -90,10 +90,10 @@ func proximaxRelayerCmd() *cobra.Command {
 
 func cosmosRelayerCmd() *cobra.Command {
 	cosmosRelayerCmd := &cobra.Command{
-		Use:     "cosmos [tendermint_node] [proximax_node]",
+		Use:     "cosmos [tendermint_node] [proximax_node] [validatorMoniker] --chain-id [chain-id]",
 		Short:   "Initializes a web socket which streams live events from the Cosmos network and relays them to the ProximaX network",
-		Args:    cobra.ExactArgs(2),
-		Example: "pxbrelayer init cosmos tcp://localhost:26657 http://localhost:7545",
+		Args:    cobra.ExactArgs(3),
+		Example: "pxbrelayer init cosmos tcp://localhost:26657 http://localhost:7545 --chain-id=testing",
 		RunE:    RunCosmosRelayerCmd,
 	}
 
@@ -131,7 +131,13 @@ func RunProximaxRelayerCmd(cmd *cobra.Command, args []string) error {
 
 // RunCosmosRelayerCmd executes the initCosmosRelayerCmd with the provided parameters
 func RunCosmosRelayerCmd(cmd *cobra.Command, args []string) error {
-	return relayer.InitCosmosRelayer(args[0], args[1])
+	chainID := viper.GetString(flags.FlagChainID)
+	if strings.TrimSpace(chainID) == "" {
+		return errors.New("Must specify a 'chain-id'")
+	}
+	rpcURL := viper.GetString(FlagRPCURL)
+
+	return relayer.InitCosmosRelayer(args[0], args[1], appCodec, args[2], chainID, rpcURL)
 }
 
 func initConfig(cmd *cobra.Command) error {
