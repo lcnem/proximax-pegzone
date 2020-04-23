@@ -86,10 +86,35 @@ func RelayUnpegNotCosigned(
 	return nil
 }
 
-func RelayUnpegNotCosigned() {
+func RelayInvitationNotCosigned(
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	msg *types.MsgInvitationNotCosignedClaim,
+	moniker string,
+) error {
 
-}
+	err := msg.ValidateBasic()
+	if err != nil {
+		return err
+	}
 
-func RelayInvitationNotCosigned() {
+	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
+	if err != nil {
+		return err
+	}
 
+	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
+	if err != nil {
+		return err
+	}
+
+	res, err := cliCtx.BroadcastTxSync(txBytes)
+	if err != nil {
+		return err
+	}
+
+	if err = cliCtx.PrintOutput(res); err != nil {
+		return err
+	}
+	return nil
 }

@@ -80,30 +80,30 @@ func (sub *CosmosSub) Start() {
 	}
 
 	for result := range out {
-			tx, ok := result.Data.(tmTypes.EventDataTx)
-			if !ok {
-				logger.Error("Type casting failed while extracting event data from new tx")
-			}
+		tx, ok := result.Data.(tmTypes.EventDataTx)
+		if !ok {
+			logger.Error("Type casting failed while extracting event data from new tx")
+		}
 
-			logger.Info("New transaction witnessed")
+		logger.Info("New transaction witnessed")
 
-			// Iterate over each event inside of the transaction
-			for _, event := range tx.Result.Events {
+		// Iterate over each event inside of the transaction
+		for _, event := range tx.Result.Events {
 			attributes := event.GetAttributes()
-				switch event.Type {
-				case "peg_claim":
+			switch event.Type {
+			case "peg_claim":
 				sub.handlePegClaim(attributes)
-					break
-				case "unpeg_not_cosigned_claim":
+				break
+			case "unpeg_not_cosigned_claim":
 				sub.handleUnpegNotCosignedClaim(attributes)
-					break
-				case "invitation_not_cosigned_claim":
+				break
+			case "invitation_not_cosigned_claim":
 				sub.handleUnpegNotCosignedClaim(attributes)
 				break
 			default:
-					break
-				}
+				break
 			}
+		}
 	}
 }
 
@@ -118,7 +118,7 @@ func (sub *CosmosSub) handlePegClaim(attributes []tmKv.Pair) {
 	if err != nil {
 		sub.Logger.Error("Transaction.GetTransaction returned error", "err", err)
 		return
-		}
+	}
 	if status.Status != "Success" {
 		sub.Logger.Error("Transaction status is not Success", "status", status.Status)
 		return
@@ -135,14 +135,15 @@ func (sub *CosmosSub) handleUnpegNotCosignedClaim(attributes []tmKv.Pair) {
 	if err != nil {
 		sub.Logger.Error("Failed to convert UnpegNotCosignedClaim event to Cosmos Message", "err", err)
 		return
-}
+	}
 	txs.RelayUnpegNotCosigned(sub.CliCtx, sub.TxBldr, msg, sub.ValidatorMonkier)
 }
 
-func handleUnpegNotCosignedClaim() {
-
-}
-
-func handleInvitationNotCosignedClaim() {
-
+func (sub *CosmosSub) handleInvitationNotCosignedClaim(attributes []tmKv.Pair) {
+	msg, err := txs.InvitationNotCosignedClaimEventToCosmosMsg(attributes)
+	if err != nil {
+		sub.Logger.Error("Failed to convert InvitationNotCosignedClaim event to Cosmos Message", "err", err)
+		return
+	}
+	txs.RelayInvitationNotCosigned(sub.CliCtx, sub.TxBldr, msg, sub.ValidatorMonkier)
 }
