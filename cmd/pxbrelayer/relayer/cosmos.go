@@ -130,8 +130,13 @@ func (sub *CosmosSub) handlePegClaim(attributes []tmKv.Pair) {
 	txs.RelayPeg(sub.CliCtx, sub.TxBldr, cosmosMsg, sub.ValidatorMonkier)
 }
 
-func handlePegClaim() {
-
+func (sub *CosmosSub) handleUnpegNotCosignedClaim(attributes []tmKv.Pair) {
+	msg, err := txs.UnpegNotCosignedClaimEventToCosmosMsg(attributes)
+	if err != nil {
+		sub.Logger.Error("Failed to convert UnpegNotCosignedClaim event to Cosmos Message", "err", err)
+		return
+}
+	txs.RelayUnpegNotCosigned(sub.CliCtx, sub.TxBldr, msg, sub.ValidatorMonkier)
 }
 
 func handleUnpegNotCosignedClaim() {

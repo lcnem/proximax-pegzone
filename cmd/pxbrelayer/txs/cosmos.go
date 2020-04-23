@@ -53,24 +53,28 @@ func RelayPeg(
 	return nil
 }
 
-	err = msg.ValidateBasic()
+func RelayUnpegNotCosigned(
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	msg *types.MsgUnpegNotCosignedClaim,
+	moniker string,
+) error {
+
+	err := msg.ValidateBasic()
 	if err != nil {
 		return err
 	}
 
-	// Prepare tx
 	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
 	if err != nil {
 		return err
 	}
 
-	// Build and sign the transaction
 	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
 	if err != nil {
 		return err
 	}
 
-	// Broadcast to a Tendermint node
 	res, err := cliCtx.BroadcastTxSync(txBytes)
 	if err != nil {
 		return err
