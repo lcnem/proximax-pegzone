@@ -3,9 +3,13 @@ package main
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/lcnem/proximax-pegzone/app"
 	"github.com/lcnem/proximax-pegzone/cmd/pxbrelayer/relayer"
@@ -19,6 +23,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/cli"
+	tmLog "github.com/tendermint/tendermint/libs/log"
 )
 
 var appCodec *amino.Codec
@@ -90,10 +95,10 @@ func proximaxRelayerCmd() *cobra.Command {
 
 func cosmosRelayerCmd() *cobra.Command {
 	cosmosRelayerCmd := &cobra.Command{
-		Use:     "cosmos [tendermint_node] [proximax_node]",
+		Use:     "cosmos [tendermint_node] [proximax_node] [validatorMoniker] --chain-id [chain-id]",
 		Short:   "Initializes a web socket which streams live events from the Cosmos network and relays them to the ProximaX network",
-		Args:    cobra.ExactArgs(2),
-		Example: "pxbrelayer init cosmos tcp://localhost:26657 http://localhost:7545",
+		Args:    cobra.ExactArgs(3),
+		Example: "pxbrelayer init cosmos tcp://localhost:26657 http://localhost:7545 --chain-id=testing",
 		RunE:    RunCosmosRelayerCmd,
 	}
 
@@ -131,7 +136,48 @@ func RunProximaxRelayerCmd(cmd *cobra.Command, args []string) error {
 
 // RunCosmosRelayerCmd executes the initCosmosRelayerCmd with the provided parameters
 func RunCosmosRelayerCmd(cmd *cobra.Command, args []string) error {
-	return relayer.InitCosmosRelayer(args[0], args[1])
+	chainID := viper.GetString(flags.FlagChainID)
+	if strings.TrimSpace(chainID) == "" {
+		return errors.New("Must specify a 'chain-id'")
+	}
+
+	rpcURL := viper.GetString(FlagRPCURL)
+	if rpcURL != "" {
+		_, err := url.Parse(rpcURL)
+		if rpcURL != "" && err != nil {
+			return errors.New(fmt.Sprintf("invalid RPC URL: %v", rpcURL))
+		}
+	}
+
+	tendermintNode := args[0]
+	if len(strings.Trim(tendermintNode, "")) == 0 {
+		return errors.New(fmt.Sprintf("invalid [tendermint-node]: %s", tendermintNode))
+	}
+
+	proximaXNode := args[1]
+	if len(strings.Trim(proximaXNode, "")) > 0 {
+		_, err := url.Parse(proximaXNode)
+		if proximaXNode != "" && err != nil {
+			return errors.New(fmt.Sprintf("invalid ProximaX URL: %v", proximaXNode))
+		}
+	}
+
+	validatorMoniker := args[2]
+	if len(strings.Trim(validatorMoniker, "")) == 0 {
+		return errors.New(fmt.Sprintf("invalid [validator-moniker]: %s", validatorMoniker))
+	}
+
+	logger := tmLog.NewTMLogger(tmLog.NewSyncWriter(os.Stdout))
+
+	cosmosSub := relayer.NewCosmosSub(rpcURL, appCodec, validatorMoniker, chainID, tendermintNode, proximaXNode, logger)
+
+	go cosmosSub.Start()
+
+	exitSignal := make(chan os.Signal, 1)
+	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
+	<-exitSignal
+
+	return nil
 }
 
 func initConfig(cmd *cobra.Command) error {
