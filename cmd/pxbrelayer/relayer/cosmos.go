@@ -106,8 +106,28 @@ func (sub *CosmosSub) Start() {
 			}
 	}
 }
-		}
+
+func (sub *CosmosSub) handlePegClaim(attributes []tmKv.Pair) {
+	cosmosMsg, err := txs.PegClaimEventToCosmosMsg(attributes)
+	if err != nil {
+		sub.Logger.Error("Failed to convert PegClaim event to Cosmos Message", "err", err)
+		return
 	}
+
+	status, err := sub.ProximaXClient.Transaction.GetTransactionStatus(context.Background(), cosmosMsg.MainchainTxHash)
+	if err != nil {
+		sub.Logger.Error("Transaction.GetTransaction returned error", "err", err)
+		return
+		}
+	if status.Status != "Success" {
+		sub.Logger.Error("Transaction status is not Success", "status", status.Status)
+		return
+	}
+	if status.Group != "confirmed" {
+		sub.Logger.Error("Transaction is not confirmed", "group", status.Group)
+		return
+	}
+	txs.RelayPeg(sub.CliCtx, sub.TxBldr, cosmosMsg, sub.ValidatorMonkier)
 }
 
 func handlePegClaim() {
