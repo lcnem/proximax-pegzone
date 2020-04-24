@@ -28,12 +28,11 @@ type CosmosSub struct {
 	ValidatorMonkier          string
 	ValidatorAddress          sdk.ValAddress
 	ProximaxPrivateKey        string
-	ProximaxMultisigPublicKey string
 	Logger                    tmLog.Logger
 	ProximaXClient            *proximax.Client
 }
 
-func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, validatorAddress sdk.ValAddress, chainID, tendermintProvider, proximaXProvicer, proximaxPrivateKey, proximaxMultisigPublicKey string, logger tmLog.Logger) CosmosSub {
+func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, validatorAddress sdk.ValAddress, chainID, tendermintProvider, proximaXProvicer, proximaxPrivateKey string, logger tmLog.Logger) CosmosSub {
 	cliCtx := sdkContext.NewCLIContext()
 	if rpcURL != "" {
 		cliCtx = cliCtx.WithNodeURI(rpcURL)
@@ -53,7 +52,6 @@ func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, vali
 		ValidatorMonkier:          validatorMonkier,
 		ValidatorAddress:          validatorAddress,
 		ProximaxPrivateKey:        proximaxPrivateKey,
-		ProximaxMultisigPublicKey: proximaxMultisigPublicKey,
 		Logger:                    logger,
 	}
 }
@@ -166,5 +164,5 @@ func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
 	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
 		return
 	}
-	txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxMultisigPublicKey, sub.ProximaxPrivateKey, msg)
+	txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, msg)
 }

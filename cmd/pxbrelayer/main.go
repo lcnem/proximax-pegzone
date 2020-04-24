@@ -98,9 +98,9 @@ func proximaxRelayerCmd() *cobra.Command {
 
 func cosmosRelayerCmd() *cobra.Command {
 	cosmosRelayerCmd := &cobra.Command{
-		Use:     "cosmos [tendermint_node] [proximax_node] [validatorMoniker] [proximax_private_key] [proximax_multisig_public_key] --chain-id [chain-id]",
+		Use:     "cosmos [tendermint_node] [proximax_node] [validatorMoniker] [proximax_private_key] --chain-id [chain-id]",
 		Short:   "Initializes a web socket which streams live events from the Cosmos network and relays them to the ProximaX network",
-		Args:    cobra.ExactArgs(5),
+		Args:    cobra.ExactArgs(4),
 		Example: "pxbrelayer init cosmos tcp://localhost:26657 http://localhost:7545 --chain-id=testing",
 		RunE:    RunCosmosRelayerCmd,
 	}
@@ -175,11 +175,6 @@ func RunCosmosRelayerCmd(cmd *cobra.Command, args []string) error {
 		return errors.New(fmt.Sprintf("invalid [proximax_private_key]: %s", proximaxPrivateKey))
 	}
 
-	proximaxMultisigPublicKey := args[4]
-	if len(strings.Trim(proximaxMultisigPublicKey, "")) == 0 {
-		return errors.New(fmt.Sprintf("invalid [proximax_multisig_public_key]: %s", proximaxMultisigPublicKey))
-	}
-
 	inBuf := bufio.NewReader(cmd.InOrStdin())
 	validatorAddress, _, err := loadValidatorCredentials(validatorMoniker, inBuf)
 	if err != nil {
@@ -188,7 +183,7 @@ func RunCosmosRelayerCmd(cmd *cobra.Command, args []string) error {
 
 	logger := tmLog.NewTMLogger(tmLog.NewSyncWriter(os.Stdout))
 
-	cosmosSub := relayer.NewCosmosSub(rpcURL, appCodec, validatorMoniker, validatorAddress, chainID, tendermintNode, proximaXNode, proximaxPrivateKey, proximaxMultisigPublicKey, logger)
+	cosmosSub := relayer.NewCosmosSub(rpcURL, appCodec, validatorMoniker, validatorAddress, chainID, tendermintNode, proximaXNode, proximaxPrivateKey, logger)
 
 	go cosmosSub.Start()
 

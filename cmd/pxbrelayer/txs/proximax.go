@@ -8,11 +8,20 @@ import (
 	"github.com/proximax-storage/go-xpx-chain-sdk/sdk"
 )
 
-func RelayUnpeg(client *sdk.Client, multisigPublicKey, firstCosignatoryPrivateKey string, msg *msgTypes.MsgUnpeg) error {
-	walletAccount, err := client.NewAccountFromPublicKey(multisigPublicKey)
+func RelayUnpeg(client *sdk.Client, firstCosignatoryPrivateKey string, msg *msgTypes.MsgUnpeg) error {
+	multisigAddress, err := sdk.NewAddressFromRaw(msg.MainchainAddress)
 	if err != nil {
 		return err
 	}
+	multisigAccountInfo, err := client.Account.GetAccountInfo(context.Background(), multisigAddress)
+	if err != nil {
+		return err
+	}
+	multisigAccount, err := client.NewAccountFromPublicKey(multisigAccountInfo.PublicKey)
+	if err != nil {
+		return err
+	}
+
 	firstCosignatory, err := client.NewAccountFromPrivateKey(firstCosignatoryPrivateKey)
 	if err != nil {
 		return err
@@ -28,7 +37,7 @@ func RelayUnpeg(client *sdk.Client, multisigPublicKey, firstCosignatoryPrivateKe
 	if err != nil {
 		return err
 	}
-	transferTx.ToAggregate(walletAccount)
+	transferTx.ToAggregate(multisigAccount)
 
 	aggregateBoundedTx, err := client.NewBondedAggregateTransaction(
 		sdk.NewDeadline(time.Hour*1),
