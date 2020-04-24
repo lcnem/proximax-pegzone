@@ -148,3 +148,36 @@ func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 	cosmosMsg := msgTypes.NewMsgUnpeg(address, mainchainAddress, amount, firstCosignerAddress)
 	return &cosmosMsg, nil
 }
+
+func RequestInvitationEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgRequestInvitation, error) {
+	var address sdk.AccAddress
+	var mainchainAddress string
+	var firstCosignerAddress sdk.ValAddress
+	var err error
+
+	for _, attribute := range attributes {
+		key := string(attribute.GetKey())
+		val := string(attribute.GetValue())
+		switch key {
+		case "address":
+			address, err = sdk.AccAddressFromBech32(val)
+			if err != nil {
+				break
+			}
+			break
+		case "mainchain_address":
+			mainchainAddress = val
+			break
+		case "first_cosigner_address":
+			firstCosignerAddress, err = sdk.ValAddressFromBech32(val)
+			if err != nil {
+				break
+			}
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	cosmosMsg := msgTypes.NewMsgRequestInvitation(address, mainchainAddress, firstCosignerAddress)
+	return &cosmosMsg, nil
+}
