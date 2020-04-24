@@ -6,6 +6,7 @@ import (
 
 	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	proximax "github.com/proximax-storage/go-xpx-chain-sdk/sdk"
@@ -19,17 +20,20 @@ import (
 )
 
 type CosmosSub struct {
-	Cdc                *codec.Codec
-	TendermintProvider string
-	ProximaXProvider   string
-	CliCtx             sdkContext.CLIContext
-	TxBldr             authtypes.TxBuilder
-	ValidatorMonkier   string
-	Logger             tmLog.Logger
-	ProximaXClient     *proximax.Client
+	Cdc                       *codec.Codec
+	TendermintProvider        string
+	ProximaXProvider          string
+	CliCtx                    sdkContext.CLIContext
+	TxBldr                    authtypes.TxBuilder
+	ValidatorMonkier          string
+	ValidatorAddress          sdk.ValAddress
+	ProximaxPrivateKey        string
+	ProximaxMultisigPublicKey string
+	Logger                    tmLog.Logger
+	ProximaXClient            *proximax.Client
 }
 
-func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier, chainID, tendermintProvider, proximaXProvicer string, logger tmLog.Logger) CosmosSub {
+func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, validatorAddress sdk.ValAddress, chainID, tendermintProvider, proximaXProvicer, proximaxPrivateKey, proximaxMultisigPublicKey string, logger tmLog.Logger) CosmosSub {
 	cliCtx := sdkContext.NewCLIContext()
 	if rpcURL != "" {
 		cliCtx = cliCtx.WithNodeURI(rpcURL)
@@ -41,13 +45,16 @@ func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier, chainID, te
 		WithChainID(chainID)
 
 	return CosmosSub{
-		Cdc:                cdc,
-		TendermintProvider: tendermintProvider,
-		ProximaXProvider:   proximaXProvicer,
-		CliCtx:             cliCtx,
-		TxBldr:             txBldr,
-		ValidatorMonkier:   validatorMonkier,
-		Logger:             logger,
+		Cdc:                       cdc,
+		TendermintProvider:        tendermintProvider,
+		ProximaXProvider:          proximaXProvicer,
+		CliCtx:                    cliCtx,
+		TxBldr:                    txBldr,
+		ValidatorMonkier:          validatorMonkier,
+		ValidatorAddress:          validatorAddress,
+		ProximaxPrivateKey:        proximaxPrivateKey,
+		ProximaxMultisigPublicKey: proximaxMultisigPublicKey,
+		Logger:                    logger,
 	}
 }
 
@@ -100,6 +107,8 @@ func (sub *CosmosSub) Start() {
 			case "invitation_not_cosigned_claim":
 				sub.handleUnpegNotCosignedClaim(attributes)
 				break
+			case "unpeg":
+				sub.handleUnpeg(attributes)
 			default:
 				break
 			}
@@ -146,4 +155,16 @@ func (sub *CosmosSub) handleInvitationNotCosignedClaim(attributes []tmKv.Pair) {
 		return
 	}
 	txs.RelayInvitationNotCosigned(sub.CliCtx, sub.TxBldr, msg, sub.ValidatorMonkier)
+}
+
+func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
+	msg, err := txs.UnpegEventToCosmosMsg(attributes)
+	if err != nil {
+		sub.Logger.Error("Failed to convert Unpeg event to Cosmos Message", "err", err)
+		return
+	}
+	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
+		return
+	}
+	txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxMultisigPublicKey, sub.ProximaxPrivateKey, msg)
 }
