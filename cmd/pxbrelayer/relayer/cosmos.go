@@ -20,16 +20,16 @@ import (
 )
 
 type CosmosSub struct {
-	Cdc                       *codec.Codec
-	TendermintProvider        string
-	ProximaXProvider          string
-	CliCtx                    sdkContext.CLIContext
-	TxBldr                    authtypes.TxBuilder
-	ValidatorMonkier          string
-	ValidatorAddress          sdk.ValAddress
-	ProximaxPrivateKey        string
-	Logger                    tmLog.Logger
-	ProximaXClient            *proximax.Client
+	Cdc                *codec.Codec
+	TendermintProvider string
+	ProximaXProvider   string
+	CliCtx             sdkContext.CLIContext
+	TxBldr             authtypes.TxBuilder
+	ValidatorMonkier   string
+	ValidatorAddress   sdk.ValAddress
+	ProximaxPrivateKey string
+	Logger             tmLog.Logger
+	ProximaXClient     *proximax.Client
 }
 
 func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, validatorAddress sdk.ValAddress, chainID, tendermintProvider, proximaXProvicer, proximaxPrivateKey string, logger tmLog.Logger) CosmosSub {
@@ -44,15 +44,15 @@ func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, vali
 		WithChainID(chainID)
 
 	return CosmosSub{
-		Cdc:                       cdc,
-		TendermintProvider:        tendermintProvider,
-		ProximaXProvider:          proximaXProvicer,
-		CliCtx:                    cliCtx,
-		TxBldr:                    txBldr,
-		ValidatorMonkier:          validatorMonkier,
-		ValidatorAddress:          validatorAddress,
-		ProximaxPrivateKey:        proximaxPrivateKey,
-		Logger:                    logger,
+		Cdc:                cdc,
+		TendermintProvider: tendermintProvider,
+		ProximaXProvider:   proximaXProvicer,
+		CliCtx:             cliCtx,
+		TxBldr:             txBldr,
+		ValidatorMonkier:   validatorMonkier,
+		ValidatorAddress:   validatorAddress,
+		ProximaxPrivateKey: proximaxPrivateKey,
+		Logger:             logger,
 	}
 }
 
@@ -107,6 +107,7 @@ func (sub *CosmosSub) Start() {
 				break
 			case "unpeg":
 				sub.handleUnpeg(attributes)
+				break
 			default:
 				break
 			}
