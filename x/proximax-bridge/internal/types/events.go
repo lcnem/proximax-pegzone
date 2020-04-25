@@ -16,5 +16,8 @@ const (
 	AttributeKeyCosmosSender           = "cosmos_sender"
 	AttributeKeyMainchainReceiver      = "mainchain_receiver"
 
+	AttributeKeyTxHash                = "tx_hash"
+	AttributeKeyNotCosignedValidators = "not_cosigned_validators"
+
 	AttributeValueCategory = ModuleName
 )

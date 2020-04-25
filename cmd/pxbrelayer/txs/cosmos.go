@@ -1,43 +1,29 @@
 package txs
 
 import (
-	"github.com/cosmos/cosmos-sdk/client/context"
+	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/cosmos/peggy/x/ethbridge"
-	"github.com/cosmos/peggy/x/ethbridge/types"
-	"github.com/gogo/protobuf/codec"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	types "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 )
 
 func RelayPeg(
-	chainID string,
-	cdc *codec.Codec,
-	validatorAddress sdk.ValAddress,
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	msg *types.MsgPegClaim,
 	moniker string,
-	cliCtx context.CLIContext,
-	claim *types.EthBridgeClaim,
-	rpcURL string,
 ) error {
 
-	if rpcURL != "" {
-		cliCtx = cliCtx.WithNodeURI(rpcURL)
-	}
-
-	cliCtx.SkipConfirm = true
-
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
+	// Check if destination account exists
 	accountRetriever := authtypes.NewAccountRetriever(cliCtx)
-
-	err := accountRetriever.EnsureExists((sdk.AccAddress(claim.ValidatorAddress)))
+	err := accountRetriever.EnsureExists((sdk.AccAddress(msg.ToAddress)))
 	if err != nil {
 		return err
 	}
 
-	msg := ethbridge.NewMsgCreateEthBridgeClaim(*claim)
-
+	// Validate message
 	err = msg.ValidateBasic()
 	if err != nil {
 		return err
@@ -67,10 +53,68 @@ func RelayPeg(
 	return nil
 }
 
-func RelayUnpegNotCosigned() {
+func RelayUnpegNotCosigned(
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	msg *types.MsgUnpegNotCosignedClaim,
+	moniker string,
+) error {
 
+	err := msg.ValidateBasic()
+	if err != nil {
+		return err
+	}
+
+	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
+	if err != nil {
+		return err
+	}
+
+	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
+	if err != nil {
+		return err
+	}
+
+	res, err := cliCtx.BroadcastTxSync(txBytes)
+	if err != nil {
+		return err
+	}
+
+	if err = cliCtx.PrintOutput(res); err != nil {
+		return err
+	}
+	return nil
 }
 
-func RelayInvitationNotCosigned() {
+func RelayInvitationNotCosigned(
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	msg *types.MsgInvitationNotCosignedClaim,
+	moniker string,
+) error {
 
+	err := msg.ValidateBasic()
+	if err != nil {
+		return err
+	}
+
+	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
+	if err != nil {
+		return err
+	}
+
+	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
+	if err != nil {
+		return err
+	}
+
+	res, err := cliCtx.BroadcastTxSync(txBytes)
+	if err != nil {
+		return err
+	}
+
+	if err = cliCtx.PrintOutput(res); err != nil {
+		return err
+	}
+	return nil
 }
