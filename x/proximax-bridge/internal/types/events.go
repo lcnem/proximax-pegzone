@@ -19,5 +19,7 @@ const (
 	AttributeKeyTxHash                = "tx_hash"
 	AttributeKeyNotCosignedValidators = "not_cosigned_validators"
 
+	AttributeKeyFirstCosignerAddress = "first_cosigner_address"
+
 	AttributeValueCategory = ModuleName
 )

@@ -86,7 +86,8 @@ func handleMsgUnpeg(
 			types.EventTypeUnpeg,
 			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
 			sdk.NewAttribute(types.AttributeKeyMainchainReceiver, msg.MainchainAddress),
-			// sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyFirstCosignerAddress, msg.FirstCosignerAddress.String()),
 		),
 	})
 
