@@ -108,6 +108,9 @@ func (sub *CosmosSub) Start() {
 			case "unpeg":
 				sub.handleUnpeg(attributes)
 				break
+			case "request_invitation":
+				sub.handleRequestInvitation(attributes)
+				break
 			default:
 				break
 			}
@@ -166,4 +169,18 @@ func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
 		return
 	}
 	txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, msg)
+}
+
+func (sub *CosmosSub) handleRequestInvitation(attributes []tmKv.Pair) {
+	msg, err := txs.RequestInvitationEventToCosmosMsg(attributes)
+	if err != nil {
+		sub.Logger.Error("Failed to convert RequestInvitation event to Cosmos Message", "err", err)
+		return
+	}
+	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
+		return
+	}
+	// todo: get newCosignerAddress
+	newCosignerAddress := ""
+	txs.RelayInvitation(sub.ProximaXClient, sub.ProximaxPrivateKey, msg, newCosignerAddress)
 }
