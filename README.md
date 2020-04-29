@@ -22,3 +22,13 @@ Cosmos監視
 ProximaX監視
 
 - マルチシグ提案がされたら連署名するだけ。
+
+## Start multiple nodes by docker-compose
+
+```
+make build-linux
+
+make build-docker-pxbdnode
+
+make localnet-start
+```
