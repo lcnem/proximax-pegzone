@@ -4,6 +4,7 @@ package types
 const (
 	EventTypeCreateClaim    = "create_claim"
 	EventTypeProphecyStatus = "prophecy_status"
+	EventTypePeg            = "peg"
 	EventTypeUnpeg          = "unpeg"
 
 	AttributeKeyMainchainTxHash = "mainchain_tx_hash"

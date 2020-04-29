@@ -7,6 +7,7 @@ import (
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
 	// TODO: Register the modules msgs
+	cdc.RegisterConcrete(MsgPeg{}, "proximaxbridge/MsgPeg", nil)
 	cdc.RegisterConcrete(MsgPegClaim{}, "proximaxbridge/MsgPegClaim", nil)
 }
 

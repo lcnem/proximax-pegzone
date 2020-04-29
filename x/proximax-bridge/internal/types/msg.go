@@ -5,6 +5,52 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
+// debug
+var _ sdk.Msg = &MsgPeg{}
+
+// MsgUnpeg - struct for unjailing jailed validator
+type MsgPeg struct {
+	Address         sdk.AccAddress `json:"address" yaml:"address"`
+	MainchainTxHash string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	ToAddress       sdk.AccAddress `json:"to_address" yaml:"to_address"`
+	Amount          sdk.Coins      `json:"amount" yaml:"amount"`
+}
+
+// NewMsgUnpeg creates a new MsgUnpeg instance
+func NewMsgPeg(address sdk.AccAddress, mainchainTxHash string, toAddress sdk.AccAddress, amount sdk.Coins) MsgPeg {
+	return MsgPeg{
+		Address:         address,
+		MainchainTxHash: mainchainTxHash,
+		ToAddress:       toAddress,
+		Amount:          amount,
+	}
+}
+
+const pegConst = "peg"
+
+// nolint
+func (msg MsgPeg) Route() string { return RouterKey }
+func (msg MsgPeg) Type() string  { return unpegConst }
+func (msg MsgPeg) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+}
+
+// GetSignBytes gets the bytes for the message signer to sign on
+func (msg MsgPeg) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+// ValidateBasic validity check for the AnteHandler
+func (msg MsgPeg) ValidateBasic() error {
+	if msg.Address.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
+	}
+	return nil
+}
+
+//
+
 // TODO: Describe your actions, these will implment the interface of `sdk.Msg`
 // verify interface at compile time
 var _ sdk.Msg = &MsgPegClaim{}

@@ -18,6 +18,8 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 		switch msg := msg.(type) {
 		// TODO: Define your msg cases
 		//
+		case MsgPeg:
+			return handleMsgPeg(ctx, cdc, bridgeKeeper, msg)
 		case MsgPegClaim:
 			return handleMsgPegClaim(ctx, cdc, bridgeKeeper, msg)
 		case MsgUnpeg:
@@ -33,6 +35,26 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 	}
+}
+
+func handleMsgPeg(
+	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgPeg,
+) (*sdk.Result, error) {
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
+		),
+		sdk.NewEvent(
+			types.EventTypePeg,
+			sdk.NewAttribute(types.AttributeKeyMainchainTxHash, msg.MainchainTxHash),
+			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyCosmosReceiver, msg.ToAddress.String()),
+		),
+	})
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 // Handle a message to create a bridge claim

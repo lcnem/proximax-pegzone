@@ -9,8 +9,8 @@ import (
 	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 )
 
-func PegClaimEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPegClaim, error) {
-	var cosmosSender sdk.ValAddress
+func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
+	var cosmosSender sdk.AccAddress
 	var mainchainTxHash string
 	var toAddress sdk.AccAddress
 	var amount sdk.Coins
@@ -21,7 +21,7 @@ func PegClaimEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPegClaim, er
 		val := string(attribute.GetValue())
 		switch key {
 		case "cosmos_sender":
-			cosmosSender, err = sdk.ValAddressFromBech32(val)
+			cosmosSender, err = sdk.AccAddressFromBech32(val)
 			break
 		case "mainchain_tx_hash":
 			mainchainTxHash = val
@@ -37,7 +37,7 @@ func PegClaimEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPegClaim, er
 	if err != nil {
 		return nil, err
 	}
-	cosmosMsg := msgTypes.NewMsgPegClaim(cosmosSender, mainchainTxHash, toAddress, amount)
+	cosmosMsg := msgTypes.NewMsgPeg(cosmosSender, mainchainTxHash, toAddress, amount)
 	return &cosmosMsg, nil
 }
 
@@ -150,7 +150,7 @@ func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 }
 
 func RequestInvitationEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgRequestInvitation, error) {
-	var address sdk.AccAddress
+	var address sdk.ValAddress
 	var mainchainAddress string
 	var firstCosignerAddress sdk.ValAddress
 	var err error
@@ -160,7 +160,7 @@ func RequestInvitationEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgReq
 		val := string(attribute.GetValue())
 		switch key {
 		case "address":
-			address, err = sdk.AccAddressFromBech32(val)
+			address, err = sdk.ValAddressFromBech32(val)
 			if err != nil {
 				break
 			}

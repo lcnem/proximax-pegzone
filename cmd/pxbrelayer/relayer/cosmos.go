@@ -88,8 +88,8 @@ func (sub *CosmosSub) Start() {
 		for _, event := range tx.Result.Events {
 			attributes := event.GetAttributes()
 			switch event.Type {
-			case "peg_claim":
-				sub.handlePegClaim(attributes)
+			case "peg":
+				sub.handlePegEvent(attributes)
 				break
 			case "unpeg_not_cosigned_claim":
 				sub.handleUnpegNotCosignedClaim(attributes)
@@ -133,7 +133,7 @@ func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
 	err = txs.RelayPeg(sub.Cdc, sub.RpcUrl, sub.ChainId, cosmosMsg, sub.ValidatorMonkier)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
-}
+	}
 }
 
 func (sub *CosmosSub) handleUnpegNotCosignedClaim(attributes []tmKv.Pair) {

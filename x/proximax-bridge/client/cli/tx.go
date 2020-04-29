@@ -2,7 +2,9 @@ package cli
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -29,11 +31,53 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	proximaxbridgeTxCmd.AddCommand(flags.PostCommands(
 		// TODO: Add tx based commands
 		// GetCmd<Action>(cdc)
+		GetCmdPeg(cdc),
 		GetCmdUnpeg(cdc),
 		GetCmdRequestInvitation(cdc),
 	)...)
 
 	return proximaxbridgeTxCmd
+}
+
+func GetCmdPeg(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "peg [key_or_address] [mainchain_tx_hash] [to_address] [amount]",
+		Short: "Peg",
+		Args:  cobra.ExactArgs(4), // Does your request require arguments
+		RunE: func(cmd *cobra.Command, args []string) error {
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			cosmosSender, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return err
+			}
+
+			mainchainTxHash := args[1]
+			if len(strings.Trim(mainchainTxHash, "")) == 0 {
+				return errors.New(fmt.Sprintf("invalid [mainchain_tx_hash]: %s", mainchainTxHash))
+			}
+
+			toAddress, err := sdk.AccAddressFromBech32(args[2])
+			if err != nil {
+				return err
+			}
+
+			coins, err := sdk.ParseCoins(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgPeg(cosmosSender, mainchainTxHash, toAddress, coins)
+			err = msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
