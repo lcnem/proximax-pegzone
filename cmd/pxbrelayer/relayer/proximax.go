@@ -23,10 +23,8 @@ func InitProximaXRelayer(
 	proximaxMultisigAddress string,
 	test bool,
 ) error {
-
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*30)
-
-	conf, err := proximax.NewConfig(ctx, []string{""})
+	conf, err := proximax.NewConfig(ctx, []string{proximaxNode})
 	if err != nil {
 		return err
 	}
@@ -81,8 +79,7 @@ func partialAddedHandler(account proximax.Account, tx *proximax.AggregateTransac
 	}
 	if tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.Transfer || tx.InnerTransactions[0].GetAbstractTransaction().Type == proximax.ModifyMultisig {
 		cosignatureTransaction := proximax.NewCosignatureTransactionFromHash(tx.AggregateHash)
-		signedTransaction, err := account.SignCosignatureTransaction(cosignatureTransaction)
-
+		_, err := account.SignCosignatureTransaction(cosignatureTransaction)
 		if err != nil {
 			return
 		}

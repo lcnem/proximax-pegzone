@@ -2,12 +2,12 @@ package relayer
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	proximax "github.com/proximax-storage/go-xpx-chain-sdk/sdk"
 	"github.com/proximax-storage/go-xpx-utils/logger"
@@ -21,6 +21,8 @@ import (
 
 type CosmosSub struct {
 	Cdc                *codec.Codec
+	RpcUrl             string
+	ChainId            string
 	TendermintProvider string
 	ProximaXProvider   string
 	CliCtx             sdkContext.CLIContext
@@ -33,22 +35,12 @@ type CosmosSub struct {
 }
 
 func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, validatorAddress sdk.ValAddress, chainID, tendermintProvider, proximaXProvicer, proximaxPrivateKey string, logger tmLog.Logger) CosmosSub {
-	cliCtx := sdkContext.NewCLIContext()
-	if rpcURL != "" {
-		cliCtx = cliCtx.WithNodeURI(rpcURL)
-	}
-	cliCtx.SkipConfirm = true
-
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
 	return CosmosSub{
 		Cdc:                cdc,
+		RpcUrl:             rpcURL,
+		ChainId:            chainID,
 		TendermintProvider: tendermintProvider,
 		ProximaXProvider:   proximaXProvicer,
-		CliCtx:             cliCtx,
-		TxBldr:             txBldr,
 		ValidatorMonkier:   validatorMonkier,
 		ValidatorAddress:   validatorAddress,
 		ProximaxPrivateKey: proximaxPrivateKey,
@@ -118,8 +110,8 @@ func (sub *CosmosSub) Start() {
 	}
 }
 
-func (sub *CosmosSub) handlePegClaim(attributes []tmKv.Pair) {
-	cosmosMsg, err := txs.PegClaimEventToCosmosMsg(attributes)
+func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
+	cosmosMsg, err := txs.PegEventToCosmosMsg(attributes)
 	if err != nil {
 		sub.Logger.Error("Failed to convert PegClaim event to Cosmos Message", "err", err)
 		return
@@ -138,7 +130,10 @@ func (sub *CosmosSub) handlePegClaim(attributes []tmKv.Pair) {
 		sub.Logger.Error("Transaction is not confirmed", "group", status.Group)
 		return
 	}
-	txs.RelayPeg(sub.CliCtx, sub.TxBldr, cosmosMsg, sub.ValidatorMonkier)
+	err = txs.RelayPeg(sub.Cdc, sub.RpcUrl, sub.ChainId, cosmosMsg, sub.ValidatorMonkier)
+	if err != nil {
+		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
+}
 }
 
 func (sub *CosmosSub) handleUnpegNotCosignedClaim(attributes []tmKv.Pair) {
@@ -147,7 +142,7 @@ func (sub *CosmosSub) handleUnpegNotCosignedClaim(attributes []tmKv.Pair) {
 		sub.Logger.Error("Failed to convert UnpegNotCosignedClaim event to Cosmos Message", "err", err)
 		return
 	}
-	txs.RelayUnpegNotCosigned(sub.CliCtx, sub.TxBldr, msg, sub.ValidatorMonkier)
+	txs.RelayUnpegNotCosigned(sub.Cdc, sub.RpcUrl, sub.ChainId, msg, sub.ValidatorMonkier)
 }
 
 func (sub *CosmosSub) handleInvitationNotCosignedClaim(attributes []tmKv.Pair) {
@@ -156,7 +151,7 @@ func (sub *CosmosSub) handleInvitationNotCosignedClaim(attributes []tmKv.Pair) {
 		sub.Logger.Error("Failed to convert InvitationNotCosignedClaim event to Cosmos Message", "err", err)
 		return
 	}
-	txs.RelayInvitationNotCosigned(sub.CliCtx, sub.TxBldr, msg, sub.ValidatorMonkier)
+	txs.RelayInvitationNotCosigned(sub.Cdc, sub.RpcUrl, sub.ChainId, msg, sub.ValidatorMonkier)
 }
 
 func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
