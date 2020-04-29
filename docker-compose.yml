@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+  pxbdnode0:
+    container_name: pxbdnode0
+    image: "lcnem/proximax-pegzone"
+    ports:
+      - "26656-26657:26656-26657"
+    environment:
+      - ID=0
+      - LOG=${LOG:-pxbd.log}
+    volumes:
+      - ./build:/pxbd:Z
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.2
+
+  pxbdnode1:
+    container_name: pxbdnode1
+    image: "lcnem/proximax-pegzone"
+    ports:
+      - "26659-26660:26656-26657"
+    environment:
+      - ID=1
+      - LOG=${LOG:-pxbd.log}
+    volumes:
+      - ./build:/pxbd:Z
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.3
+
+  pxbdnode2:
+    container_name: pxbdnode2
+    image: "lcnem/proximax-pegzone"
+    environment:
+      - ID=2
+      - LOG=${LOG:-pxbd.log}
+    ports:
+      - "26661-26662:26656-26657"
+    volumes:
+      - ./build:/pxbd:Z
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.4
+
+  pxbdnode3:
+    container_name: pxbdnode3
+    image: "lcnem/proximax-pegzone"
+    environment:
+      - ID=3
+      - LOG=${LOG:-pxbd.log}
+    ports:
+      - "26663-26664:26656-26657"
+    volumes:
+      - ./build:/pxbd:Z
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.5
+
+networks:
+  localnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      -
+        subnet: 192.168.10.0/16
+
