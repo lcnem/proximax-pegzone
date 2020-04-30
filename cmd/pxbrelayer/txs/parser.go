@@ -26,7 +26,7 @@ func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
 		case "mainchain_tx_hash":
 			mainchainTxHash = val
 			break
-		case "to_address":
+		case "cosmos_receiver":
 			toAddress, err = sdk.AccAddressFromBech32(val)
 			break
 		case "amount":
