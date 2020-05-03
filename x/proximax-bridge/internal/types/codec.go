@@ -9,6 +9,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	// TODO: Register the modules msgs
 	cdc.RegisterConcrete(MsgPeg{}, "proximaxbridge/MsgPeg", nil)
 	cdc.RegisterConcrete(MsgPegClaim{}, "proximaxbridge/MsgPegClaim", nil)
+	cdc.RegisterConcrete(MsgUnpeg{}, "proximaxbridge/MsgUnpeg", nil)
 }
 
 // ModuleCdc defines the module codec
