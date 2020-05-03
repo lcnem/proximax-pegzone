@@ -32,11 +32,8 @@ func getApprovalDelta(originalNum int32, addedNumber int32) int8 {
 	}
 }
 
-func RelayUnpeg(client *sdk.Client, firstCosignatoryPrivateKey string, msg *msgTypes.MsgUnpeg) error {
-	multisigAccount, err := getAccountByAddress(client, msg.MainchainAddress)
-	if err != nil {
-		return err
-	}
+func RelayUnpeg(client *sdk.Client, firstCosignatoryPrivateKey, multisigPublicKey string, msg *msgTypes.MsgUnpeg) error {
+	multisigAccount, err := sdk.NewAccountFromPublicKey(multisigPublicKey, client.NetworkType())
 	firstCosignatory, err := client.NewAccountFromPrivateKey(firstCosignatoryPrivateKey)
 	if err != nil {
 		return err
@@ -46,12 +43,13 @@ func RelayUnpeg(client *sdk.Client, firstCosignatoryPrivateKey string, msg *msgT
 	transferTx, err := client.NewTransferTransaction(
 		sdk.NewDeadline(time.Hour*1),
 		sdk.NewAddress(msg.MainchainAddress, client.NetworkType()),
-		[]*sdk.Mosaic{sdk.Xpx(amount)},
+		[]*sdk.Mosaic{sdk.XpxRelative(amount)},
 		sdk.NewPlainMessage(""),
 	)
 	if err != nil {
 		return err
 	}
+
 	transferTx.ToAggregate(multisigAccount)
 
 	aggregateBoundedTx, err := client.NewBondedAggregateTransaction(
@@ -93,6 +91,7 @@ func RelayUnpeg(client *sdk.Client, firstCosignatoryPrivateKey string, msg *msgT
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
