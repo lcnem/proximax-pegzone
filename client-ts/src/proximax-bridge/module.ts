@@ -14,13 +14,13 @@ export function getParams(sdk: CosmosSDK) {
 export function unpeg(sdk: CosmosSDK, req: UnpegReq) {
   return sdk.instancifyObjectWithoutAminoJSON<StdTx>(
     StdTx,
-    Axios.post("/proximax_bridge/unpeg", req)
+    Axios.post(`${sdk.url}/proximax_bridge/unpeg`, req)
   );
 }
 
 export function requestInvitation(sdk: CosmosSDK, req: RequestInvitationReq) {
   return sdk.instancifyObjectWithoutAminoJSON<StdTx>(
     StdTx,
-    Axios.post("/proximax_bridge/request_invitation", req)
+    Axios.post(`${sdk.url}/proximax_bridge/request_invitation`, req)
   );
 }
