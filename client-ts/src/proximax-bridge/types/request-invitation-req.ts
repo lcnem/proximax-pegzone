@@ -1,4 +1,4 @@
-import { BaseReq } from "cosmos-client";
+import { BaseReq } from "cosmos-client/api";
 
 export type RequestInvitationReq = {
   base_req: BaseReq;

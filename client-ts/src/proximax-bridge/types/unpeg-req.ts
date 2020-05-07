@@ -1,4 +1,4 @@
-import { BaseReq, Coin } from "cosmos-client";
+import { BaseReq, Coin } from "cosmos-client/api";
 
 export type UnpegReq = {
   base_req: BaseReq;

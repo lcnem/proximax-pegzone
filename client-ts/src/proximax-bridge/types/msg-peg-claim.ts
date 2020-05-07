@@ -1,4 +1,5 @@
-import { AccAddress, Coin, Msg, ValAddress } from "cosmos-client";
+import { AccAddress, Msg, ValAddress } from "cosmos-client";
+import { Coin } from "cosmos-client/api";
 
 export class MsgPegClaim extends Msg {
   constructor(

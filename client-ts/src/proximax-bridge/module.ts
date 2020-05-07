@@ -1,22 +1,26 @@
 import { CosmosSDK } from "cosmos-client";
 import { StdTx } from "cosmos-client/x/auth";
 import { UnpegReq, RequestInvitationReq, Params } from "./types";
+import Axios from "axios";
 
 /**
  * Getting the multisig address on mainchain for collateral.
  * @param sdk
  */
-export async function getParams(sdk: CosmosSDK) {
-  return await sdk.get<Params>("/proximax_bridge/parameters");
+export function getParams(sdk: CosmosSDK) {
+  return Axios.get<Params>(`${sdk.url}/proximax_bridge/parameters`);
 }
 
-export async function unpeg(sdk: CosmosSDK, req: UnpegReq) {
-  return await sdk.post<StdTx>("/proximax_bridge/unpeg", req);
+export function unpeg(sdk: CosmosSDK, req: UnpegReq) {
+  return sdk.instancifyObjectWithoutAminoJSON<StdTx>(
+    StdTx,
+    Axios.post("/proximax_bridge/unpeg", req)
+  );
 }
 
-export async function requestInvitation(
-  sdk: CosmosSDK,
-  req: RequestInvitationReq
-) {
-  return await sdk.post<StdTx>("/proximax_bridge/request_invitation", req);
+export function requestInvitation(sdk: CosmosSDK, req: RequestInvitationReq) {
+  return sdk.instancifyObjectWithoutAminoJSON<StdTx>(
+    StdTx,
+    Axios.post("/proximax_bridge/request_invitation", req)
+  );
 }

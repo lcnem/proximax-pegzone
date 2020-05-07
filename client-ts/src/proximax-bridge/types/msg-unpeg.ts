@@ -1,4 +1,5 @@
-import { AccAddress, Coin, ValAddress, Msg } from "cosmos-client";
+import { AccAddress, ValAddress, Msg } from "cosmos-client";
+import { Coin } from "cosmos-client/api";
 
 export class MsgUnpeg extends Msg {
   constructor(
