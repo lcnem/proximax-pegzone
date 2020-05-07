@@ -20,35 +20,38 @@ import (
 )
 
 type CosmosSub struct {
-	Cdc                *codec.Codec
-	RpcUrl             string
-	ChainId            string
-	TendermintProvider string
-	ProximaXProvider   string
-	CliCtx             sdkContext.CLIContext
-	TxBldr             authtypes.TxBuilder
-	ValidatorMonkier   string
-	ValidatorAddress   sdk.ValAddress
-	ProximaxPrivateKey string
-	Logger             tmLog.Logger
-	ProximaXClient     *proximax.Client
+	Cdc                      *codec.Codec
+	RpcUrl                   string
+	ChainId                  string
+	TendermintProvider       string
+	ProximaXProvider         string
+	CliCtx                   sdkContext.CLIContext
+	TxBldr                   authtypes.TxBuilder
+	ValidatorMonkier         string
+	ValidatorAddress         sdk.ValAddress
+	ProximaxPrivateKey       string
+	ProximxMultisigPublicKey string
+	Logger                   tmLog.Logger
+	ProximaXClient           *proximax.Client
 }
 
-func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, validatorAddress sdk.ValAddress, chainID, tendermintProvider, proximaXProvicer, proximaxPrivateKey string, logger tmLog.Logger) CosmosSub {
+func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, validatorAddress sdk.ValAddress, chainID, tendermintProvider, proximaXProvicer, proximaxPrivateKey, proximxMultisigPublicKey string, logger tmLog.Logger) CosmosSub {
 	return CosmosSub{
-		Cdc:                cdc,
-		RpcUrl:             rpcURL,
-		ChainId:            chainID,
-		TendermintProvider: tendermintProvider,
-		ProximaXProvider:   proximaXProvicer,
-		ValidatorMonkier:   validatorMonkier,
-		ValidatorAddress:   validatorAddress,
-		ProximaxPrivateKey: proximaxPrivateKey,
-		Logger:             logger,
+		Cdc:                      cdc,
+		RpcUrl:                   rpcURL,
+		ChainId:                  chainID,
+		TendermintProvider:       tendermintProvider,
+		ProximaXProvider:         proximaXProvicer,
+		ValidatorMonkier:         validatorMonkier,
+		ValidatorAddress:         validatorAddress,
+		ProximaxPrivateKey:       proximaxPrivateKey,
+		ProximxMultisigPublicKey: proximxMultisigPublicKey,
+		Logger:                   logger,
 	}
 }
 
-func (sub *CosmosSub) Start() {
+func (sub *CosmosSub) Start(exitSignal chan os.Signal) {
+	fmt.Printf("ProximaXProvider: %s\n", sub.ProximaXProvider)
 	conf, err := proximax.NewConfig(context.Background(), []string{sub.ProximaXProvider})
 	if err != nil {
 		sub.Logger.Error("Failed to initialize ProximaX client", "err", err)
@@ -76,36 +79,41 @@ func (sub *CosmosSub) Start() {
 		os.Exit(1)
 	}
 
-	for result := range out {
-		tx, ok := result.Data.(tmTypes.EventDataTx)
-		if !ok {
-			logger.Error("Type casting failed while extracting event data from new tx")
-		}
-
-		logger.Info("New transaction witnessed")
-
-		// Iterate over each event inside of the transaction
-		for _, event := range tx.Result.Events {
-			attributes := event.GetAttributes()
-			switch event.Type {
-			case "peg":
-				sub.handlePegEvent(attributes)
-				break
-			case "unpeg_not_cosigned_claim":
-				sub.handleUnpegNotCosignedClaim(attributes)
-				break
-			case "invitation_not_cosigned_claim":
-				sub.handleUnpegNotCosignedClaim(attributes)
-				break
-			case "unpeg":
-				sub.handleUnpeg(attributes)
-				break
-			case "request_invitation":
-				sub.handleRequestInvitation(attributes)
-				break
-			default:
-				break
+	for {
+		select {
+		case result := <-out:
+			tx, ok := result.Data.(tmTypes.EventDataTx)
+			if !ok {
+				logger.Error("Type casting failed while extracting event data from new tx")
 			}
+
+			logger.Info("New transaction witnessed")
+
+			// Iterate over each event inside of the transaction
+			for _, event := range tx.Result.Events {
+				attributes := event.GetAttributes()
+				switch event.Type {
+				case "peg":
+					sub.handlePegEvent(attributes)
+					break
+				case "unpeg_not_cosigned_claim":
+					sub.handleUnpegNotCosignedClaim(attributes)
+					break
+				case "invitation_not_cosigned_claim":
+					sub.handleUnpegNotCosignedClaim(attributes)
+					break
+				case "unpeg":
+					sub.handleUnpeg(attributes)
+					break
+				case "request_invitation":
+					sub.handleRequestInvitation(attributes)
+					break
+				default:
+					break
+				}
+			}
+		case <-exitSignal:
+			return
 		}
 	}
 }
@@ -163,7 +171,7 @@ func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
 	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
 		return
 	}
-	txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, msg)
+	txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, sub.ProximxMultisigPublicKey, msg)
 }
 
 func (sub *CosmosSub) handleRequestInvitation(attributes []tmKv.Pair) {

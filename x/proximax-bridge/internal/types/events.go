@@ -15,7 +15,7 @@ const (
 
 	AttributeKeyMultisigCustodyAddress = "multisig_custody_address"
 	AttributeKeyCosmosSender           = "cosmos_sender"
-	AttributeKeyMainchainReceiver      = "mainchain_receiver"
+	AttributeKeyMainchainAddress       = "mainchain_address"
 
 	AttributeKeyTxHash                = "tx_hash"
 	AttributeKeyNotCosignedValidators = "not_cosigned_validators"

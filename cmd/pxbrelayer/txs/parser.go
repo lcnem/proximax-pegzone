@@ -120,7 +120,7 @@ func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 		key := string(attribute.GetKey())
 		val := string(attribute.GetValue())
 		switch key {
-		case "address":
+		case "cosmos_sender":
 			address, err = sdk.AccAddressFromBech32(val)
 			if err != nil {
 				break
