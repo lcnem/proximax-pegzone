@@ -3,6 +3,7 @@ package txs
 import (
 	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -10,15 +11,29 @@ import (
 )
 
 func RelayPeg(
-	cliCtx sdkContext.CLIContext,
-	txBldr authtypes.TxBuilder,
-	msg *types.MsgPegClaim,
+	cdc *codec.Codec,
+	rpcURL string,
+	chainID string,
+	claim *types.MsgPeg,
 	moniker string,
 ) error {
+	msg := types.NewMsgPegClaim(sdk.ValAddress(claim.Address), claim.MainchainTxHash, claim.ToAddress, claim.Amount)
+
+	cliCtx := sdkContext.NewCLIContext().
+		WithCodec(cdc).
+		WithFromAddress(sdk.AccAddress(msg.Address))
+	if rpcURL != "" {
+		cliCtx = cliCtx.WithNodeURI(rpcURL)
+	}
+	cliCtx.SkipConfirm = true
+
+	txBldr := authtypes.NewTxBuilderFromCLI(nil).
+		WithTxEncoder(utils.GetTxEncoder(cdc)).
+		WithChainID(chainID)
 
 	// Check if destination account exists
 	accountRetriever := authtypes.NewAccountRetriever(cliCtx)
-	err := accountRetriever.EnsureExists((sdk.AccAddress(msg.ToAddress)))
+	err := accountRetriever.EnsureExists(msg.ToAddress)
 	if err != nil {
 		return err
 	}
@@ -54,11 +69,21 @@ func RelayPeg(
 }
 
 func RelayUnpegNotCosigned(
-	cliCtx sdkContext.CLIContext,
-	txBldr authtypes.TxBuilder,
+	cdc *codec.Codec,
+	rpcURL string,
+	chainID string,
 	msg *types.MsgUnpegNotCosignedClaim,
 	moniker string,
 ) error {
+	cliCtx := sdkContext.NewCLIContext()
+	if rpcURL != "" {
+		cliCtx = cliCtx.WithNodeURI(rpcURL)
+	}
+	cliCtx.SkipConfirm = true
+
+	txBldr := authtypes.NewTxBuilderFromCLI(nil).
+		WithTxEncoder(utils.GetTxEncoder(cdc)).
+		WithChainID(chainID)
 
 	err := msg.ValidateBasic()
 	if err != nil {
@@ -87,11 +112,21 @@ func RelayUnpegNotCosigned(
 }
 
 func RelayInvitationNotCosigned(
-	cliCtx sdkContext.CLIContext,
-	txBldr authtypes.TxBuilder,
+	cdc *codec.Codec,
+	rpcURL string,
+	chainID string,
 	msg *types.MsgInvitationNotCosignedClaim,
 	moniker string,
 ) error {
+	cliCtx := sdkContext.NewCLIContext()
+	if rpcURL != "" {
+		cliCtx = cliCtx.WithNodeURI(rpcURL)
+	}
+	cliCtx.SkipConfirm = true
+
+	txBldr := authtypes.NewTxBuilderFromCLI(nil).
+		WithTxEncoder(utils.GetTxEncoder(cdc)).
+		WithChainID(chainID)
 
 	err := msg.ValidateBasic()
 	if err != nil {

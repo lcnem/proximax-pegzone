@@ -24,6 +24,7 @@ var (
 	DefaultGenesisState = types.DefaultGenesisState
 	ValidateGenesis     = types.ValidateGenesis
 	// TODO: Fill out function aliases
+	NewMsgPeg                        = types.NewMsgPeg
 	NewMsgPegClaim                   = types.NewMsgPegClaim
 	NewMsgUnpeg                      = types.NewMsgUnpeg
 	NewMsgUnpegNotCosignedClaim      = types.NewMsgUnpegNotCosignedClaim
@@ -41,6 +42,7 @@ type (
 	Params       = types.Params
 
 	// TODO: Fill out module types
+	MsgPeg                        = types.MsgPeg
 	MsgPegClaim                   = types.MsgPegClaim
 	MsgUnpeg                      = types.MsgUnpeg
 	MsgUnpegNotCosignedClaim      = types.MsgUnpegNotCosignedClaim
