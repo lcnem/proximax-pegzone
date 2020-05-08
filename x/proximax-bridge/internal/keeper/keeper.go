@@ -64,9 +64,9 @@ func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 		return err
 	}
 
-	err = k.supplyKeeper.MintCoins(ctx, types.ModuleName, oracleClaim.Amount)
-
-	if err != nil {
+	if err := k.supplyKeeper.MintCoins(
+		ctx, types.ModuleName, oracleClaim.Amount,
+	); err != nil {
 		return err
 	}
 
@@ -74,6 +74,22 @@ func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 		ctx, types.ModuleName, oracleClaim.ToAddress, oracleClaim.Amount,
 	); err != nil {
 		panic(err)
+	}
+
+	return nil
+}
+
+func (k Keeper) ProcessUnpeg(ctx sdk.Context, msg types.MsgUnpeg) error {
+	if err := k.supplyKeeper.SendCoinsFromAccountToModule(
+		ctx, msg.Address, types.ModuleName, msg.Amount,
+	); err != nil {
+		return err
+	}
+
+	if err := k.supplyKeeper.BurnCoins(
+		ctx, types.ModuleName, msg.Amount,
+	); err != nil {
+		return err
 	}
 
 	return nil
@@ -95,6 +111,21 @@ func (k Keeper) ProcessSuccessfulUnpegNotCosignedClaim(ctx sdk.Context, claim st
 	if err != nil {
 		return err
 	}
+
+	//ここで、UnpegしたときにBurnしたCoinを復活させる必要がでてきますね。。。types.MsgUnpegNotCosignedClaimにはAmountの情報が無いので、付け足しましょうか。。。？
+	/*
+		if err := k.supplyKeeper.MintCoins(
+			ctx, types.ModuleName, oracleClaim.Amount,
+		); err != nil {
+			return err
+		}
+
+		if err := k.supplyKeeper.SendCoinsFromModuleToAccount(
+			ctx, types.ModuleName, oracleClaim.ToAddress, oracleClaim.Amount,
+		); err != nil {
+			panic(err)
+		}
+	*/
 
 	for _, notCosignedValidator := range oracleClaim.NotCosignedValidators {
 		k.slashingKeeper.Slash(ctx, sdk.ConsAddress(notCosignedValidator), sdk.NewDec(0), 0, 0)
