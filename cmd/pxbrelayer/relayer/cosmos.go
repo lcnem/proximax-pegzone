@@ -183,7 +183,5 @@ func (sub *CosmosSub) handleRequestInvitation(attributes []tmKv.Pair) {
 	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
 		return
 	}
-	// todo: get newCosignerAddress
-	newCosignerAddress := ""
-	txs.RelayInvitation(sub.ProximaXClient, sub.ProximaxPrivateKey, msg, newCosignerAddress)
+	txs.RelayInvitation(sub.ProximaXClient, sub.ProximaxPrivateKey, msg)
 }
