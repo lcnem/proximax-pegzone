@@ -39,6 +39,14 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
+func (k Keeper) IsUsedHash(ctx sdk.Context, hash string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(hash))
+}
+
+func (k Keeper) MarkAsUsedHash(ctx sdk.Context, hash string) {
+	ctx.KVStore(k.storeKey).Set([]byte(hash), []byte(hash))
+}
+
 // ProcessClaim processes a new claim coming in from a validator
 func (k Keeper) ProcessPegClaim(ctx sdk.Context, claim types.MsgPegClaim) (oracle.Status, error) {
 	oracleClaim, err := types.CreateOracleClaimFromMsgPegClaim(k.cdc, claim)
