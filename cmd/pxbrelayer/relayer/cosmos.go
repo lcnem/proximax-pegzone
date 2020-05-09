@@ -125,6 +125,16 @@ func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
 		return
 	}
 
+	tx, err := sub.ProximaXClient.Transaction.GetTransaction(context.Background(), cosmosMsg.MainchainTxHash)
+	if err != nil {
+		sub.Logger.Error("Transaction is not found", "err", err)
+		return
+	}
+	if typ := tx.GetAbstractTransaction().Type; typ != proximax.Transfer {
+		sub.Logger.Info("Transaction type is not transfer", "hash", cosmosMsg.MainchainTxHash, "type", typ)
+		return
+	}
+
 	status, err := sub.ProximaXClient.Transaction.GetTransactionStatus(context.Background(), cosmosMsg.MainchainTxHash)
 	if err != nil {
 		sub.Logger.Error("Transaction.GetTransaction returned error", "err", err)

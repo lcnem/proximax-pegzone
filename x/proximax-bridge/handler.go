@@ -1,6 +1,7 @@
 package proximax_bridge
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -40,6 +41,12 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 func handleMsgPeg(
 	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgPeg,
 ) (*sdk.Result, error) {
+	if bridgeKeeper.IsUsedHash(ctx, msg.MainchainTxHash) {
+		err := errors.New(fmt.Sprintf("Transaction has been already pegged: %s", msg.MainchainTxHash))
+		return nil, err
+	}
+
+	// Send to relayer
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -69,6 +76,7 @@ func handleMsgPegClaim(
 		if err := bridgeKeeper.ProcessSuccessfulPegClaim(ctx, status.FinalClaim); err != nil {
 			return nil, err
 		}
+		bridgeKeeper.MarkAsUsedHash(ctx, msg.MainchainTxHash)
 	}
 
 	ctx.EventManager().EmitEvents(sdk.Events{
