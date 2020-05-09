@@ -30,7 +30,43 @@ make install
 vi $HOME/.pxbd/config/config.toml
 ```
 
-## Start multiple nodes by docker-compose
+## Test Locally with single node
+
+### Initialize and Start Deamon node
+
+``` 
+pxbd init test --chain-id testing
+pxbcli config keyring-backend test
+ 
+pxbcli keys add validator
+pxbcli keys add account
+ 
+pxbd add-genesis-account $(pxbcli keys show validator -a) 1000token,100000000stake
+ 
+pxbd gentx --name validator --keyring-backend test
+pxbd collect-gentxs
+pxbd start
+```
+
+### Start Relayer
+
+```
+# Relayer for Cosmos
+pxbrelayer init cosmos [URL for node by RPC] [URL for ProximaX node] [Validator Name] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID]
+
+# Relayer for ProximaX
+pxbrelayer init proximax [Validator Name] [URL for ProximaX node] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID] --chain-id=testing
+```
+
+Example
+
+```
+pxbrelayer init cosmos http://127.0.0.1:26657 http://bctestnet1.brimstone.xpxsirius.io:3000 validator1  8611AF477E001C9D033216F94328BD22F91E782FD2D104FAE3F5B66997579154 8007692AB57547661CD0721FBE18AA1DB27E0CC55921D4C0C9A3BEBC96221AC7 --chain-id=testing --rpc-url=http://127.0.0.1:26657
+
+pxbrelayer init proximax validator http://bctestnet1.brimstone.xpxsirius.io:3000 8611AF477E001C9D033216F94328BD22F91E782FD2D104FAE3F5B66997579154 VBK6ZOVHKSJOFUOX7XUHHZUABO4Q33GCF726AKHG --chain-id=testing
+```
+
+## Test Locally with Multiple nodes by docker-compose
 
 ```
 make build-linux
@@ -48,38 +84,25 @@ Commands via CLI enable you to create a transaction and broadcast it with your s
 
 #### Peg
 
+Mint and send tokens to given account in cosmos by hash of transaction in ProximaX
+
 ```shell
-pxbcli tx proximaxbridge peg [key_or_address] [mainchain_tx_hash] [to_address] [amount]
+pxbcli tx proximaxbridge peg [Validator's key or address] [Transaction Hash on ProximaX] [Recipient Account Address in Cosmos] [Amount]
 ```
 
 #### Unpeg
 
+Burn tokens from Cosmos Account and send to account in ProximaX
+
 ```shell
-pxbcli tx proximaxbridge unpeg [key_or_address] [amount] [mainchain_address] [first_cosigner_address]
+pxbcli tx proximaxbridge unpeg [Validator's key or address] [Amount] [Recipient Account Address in ProximaX] [First Cosigner Address in Cosmos]
 ```
 
 #### Request Invitation
+
+Invite new ProximaX account to Multisig Account
 
 ```shell
 pxbcli tx proximaxbridge request-invitation [from_key_or_address] [multisig_account_address] [new_cosigner_public_key] [first_cosigner_address]
 ```
 
-### Relayer
-
-#### Init
-
-```shell
-pxbrelayer init
-```
-
-#### ProximaX relayer
-
-```shell
-pxbrelayer proximax [validator_from_name] [proximax_node] [proximax_private_key] [proximax_multisig_address] --chain-id [chain-id]
-```
-
-#### Cosmos Relayer
-
-```shell
-pxbrelayer cosmos [tendermint_node] [proximax_node] [validator_moniker] [proximax_cosigner_private_key] [multisig_account_public_key] --chain-id [chain-id]
-```
