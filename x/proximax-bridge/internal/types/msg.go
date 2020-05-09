@@ -191,17 +191,19 @@ var _ sdk.Msg = &MsgRequestInvitation{}
 
 // MsgRequestInvitation - struct for unjailing jailed validator
 type MsgRequestInvitation struct {
-	Address              sdk.ValAddress `json:"address" yaml:"address"`
-	MainchainAddress     string         `json:"mainchain_address" yaml:"mainchain_address"`
-	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
+	Address                sdk.ValAddress `json:"address" yaml:"address"`
+	MultisigAccountAddress string         `json:"multisig_account_address" yaml:"multisig_account_address"`
+	NewCosignerPublicKey   string         `json:"new_cosigner_public_key" yaml:"new_cosigner_public_key"`
+	FirstCosignerAddress   sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 // NewMsgRequestInvitation creates a new MsgRequestInvitation instance
-func NewMsgRequestInvitation(address sdk.ValAddress, mainchainAddress string, firstCosignerAddress sdk.ValAddress) MsgRequestInvitation {
+func NewMsgRequestInvitation(address sdk.ValAddress, multisigAccountAddress, newCosignerPublicKey string, firstCosignerAddress sdk.ValAddress) MsgRequestInvitation {
 	return MsgRequestInvitation{
-		Address:              address,
-		MainchainAddress:     mainchainAddress,
-		FirstCosignerAddress: firstCosignerAddress,
+		Address:                address,
+		MultisigAccountAddress: multisigAccountAddress,
+		NewCosignerPublicKey:   newCosignerPublicKey,
+		FirstCosignerAddress:   firstCosignerAddress,
 	}
 }
 

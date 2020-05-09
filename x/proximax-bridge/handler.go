@@ -27,6 +27,8 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 			return handleMsgUnpeg(ctx, cdc, accountKeeper, bridgeKeeper, msg)
 		case MsgUnpegNotCosignedClaim:
 			return handleMsgUnpegNotCosignedClaim(ctx, cdc, accountKeeper, bridgeKeeper, msg)
+		case MsgRequestInvitation:
+			return handleMsgRequestInvitation(ctx, cdc, msg)
 
 		//Example:
 		// case MsgSet<Action>:
@@ -153,4 +155,24 @@ func handleMsgUnpegNotCosignedClaim(
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 
+}
+
+func handleMsgRequestInvitation(
+	ctx sdk.Context, cdc *codec.Codec, msg MsgRequestInvitation,
+) (*sdk.Result, error) {
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
+		),
+		sdk.NewEvent(
+			types.EventTypeInvitation,
+			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
+			sdk.NewAttribute(types.AttributeKeyMultisigAccountAddress, msg.MultisigAccountAddress),
+			sdk.NewAttribute(types.AttributeKeyNewCosignerPublicKey, msg.NewCosignerPublicKey),
+			sdk.NewAttribute(types.AttributeKeyFirstCosignerAddress, msg.FirstCosignerAddress.String()),
+		),
+	})
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
