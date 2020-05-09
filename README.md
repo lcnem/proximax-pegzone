@@ -55,7 +55,7 @@ pxbd start
 pxbrelayer init cosmos [URL for node by RPC] [URL for ProximaX node] [Validator Name] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID]
 
 # Relayer for ProximaX
-pxbrelayer init proximax [Validator Name] [URL for ProximaX node] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID] --chain-id=testing
+pxbrelayer init proximax [Validator Name] [URL for ProximaX node] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID]
 ```
 
 Example
