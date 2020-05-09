@@ -181,7 +181,11 @@ func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
 	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
 		return
 	}
-	txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, sub.ProximxMultisigPublicKey, msg)
+	err = txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, sub.ProximxMultisigPublicKey, msg)
+	if err != nil {
+		sub.Logger.Error("Failed to Relay Transaction to ProximaX", "err", err)
+		return
+	}
 }
 
 func (sub *CosmosSub) handleRequestInvitation(attributes []tmKv.Pair) {
