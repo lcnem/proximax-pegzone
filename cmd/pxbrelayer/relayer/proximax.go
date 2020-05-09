@@ -61,7 +61,7 @@ func partialAddedHandler(client *sdk.Client, logger tmLog.Logger, account *sdk.A
 		return
 	}
 
-	if tx.InnerTransactions[0].GetAbstractTransaction().Type == sdk.Transfer || tx.InnerTransactions[0].GetAbstractTransaction().Type == sdk.ModifyMultisig {
+	if txType := tx.InnerTransactions[0].GetAbstractTransaction().Type; txType == sdk.Transfer || txType == sdk.ModifyMultisig {
 		if tx.Signer.PublicKey == account.PublicAccount.PublicKey {
 			return
 		}

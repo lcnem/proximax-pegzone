@@ -95,8 +95,8 @@ func RelayUnpeg(client *sdk.Client, firstCosignatoryPrivateKey, multisigPublicKe
 	return nil
 }
 
-func RelayInvitation(client *sdk.Client, firstCosignatoryPrivateKey string, msg *msgTypes.MsgRequestInvitation, newCosignerAddress string) error {
-	multisigAccount, err := getAccountByAddress(client, msg.MainchainAddress)
+func RelayInvitation(client *sdk.Client, firstCosignatoryPrivateKey string, msg *msgTypes.MsgRequestInvitation) error {
+	multisigAccount, err := getAccountByAddress(client, msg.MultisigAccountAddress)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func RelayInvitation(client *sdk.Client, firstCosignatoryPrivateKey string, msg 
 	if err != nil {
 		return err
 	}
-	newCosignerAccount, err := getAccountByAddress(client, newCosignerAddress)
+	newCosignerAccount, err := client.NewAccountFromPublicKey(msg.NewCosignerPublicKey)
 	if err != nil {
 		return err
 	}

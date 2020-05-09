@@ -22,10 +22,10 @@ func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router) {
 type UnpegReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// TODO: Define more types if needed
-	Address string `json:"address" yaml:"address"`
-	MainchainAddress string `json:"mainchain_address" yaml:"mainchain_address"`
-	Amount sdk.Coins `json:"amount" yaml:"amount"`
-	FirstCosignerAddress string `json:"first_cosigner_address" yaml:"first_cosigner_address"`
+	Address              string    `json:"address" yaml:"address"`
+	MainchainAddress     string    `json:"mainchain_address" yaml:"mainchain_address"`
+	Amount               sdk.Coins `json:"amount" yaml:"amount"`
+	FirstCosignerAddress string    `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 func UnpegRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
@@ -37,11 +37,11 @@ func UnpegRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		address, _ := sdk.AccAddressFromBech32( req.Address)
+		address, _ := sdk.AccAddressFromBech32(req.Address)
 		firstCosignerAddress, _ := sdk.ValAddressFromBech32(req.FirstCosignerAddress)
 
 		// TODO: Define the module tx logic for this action
-		msg:=  types.NewMsgUnpeg(
+		msg := types.NewMsgUnpeg(
 			address,
 			req.MainchainAddress,
 			req.Amount,
@@ -52,13 +52,15 @@ func UnpegRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+/*
 type RequestInvitationReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// TODO: Define more types if needed
-	Address string `json:"address" yaml:"address"`
-	MainchainAddress string `json:"mainchain_address" yaml:"mainchain_address"`
+	Address              string `json:"address" yaml:"address"`
+	MainchainAddress     string `json:"mainchain_address" yaml:"mainchain_address"`
 	FirstCosignerAddress string `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
+
 
 func RequestInvitationRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +84,7 @@ func RequestInvitationRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFu
 		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
 	}
 }
+*/
 
 /*
 // Action TX body

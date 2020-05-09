@@ -39,6 +39,14 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
+func (k Keeper) IsUsedHash(ctx sdk.Context, hash string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(hash))
+}
+
+func (k Keeper) MarkAsUsedHash(ctx sdk.Context, hash string) {
+	ctx.KVStore(k.storeKey).Set([]byte(hash), []byte(hash))
+}
+
 // ProcessClaim processes a new claim coming in from a validator
 func (k Keeper) ProcessPegClaim(ctx sdk.Context, claim types.MsgPegClaim) (oracle.Status, error) {
 	oracleClaim, err := types.CreateOracleClaimFromMsgPegClaim(k.cdc, claim)
@@ -56,9 +64,9 @@ func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 		return err
 	}
 
-	err = k.supplyKeeper.MintCoins(ctx, types.ModuleName, oracleClaim.Amount)
-
-	if err != nil {
+	if err := k.supplyKeeper.MintCoins(
+		ctx, types.ModuleName, oracleClaim.Amount,
+	); err != nil {
 		return err
 	}
 
@@ -66,6 +74,22 @@ func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 		ctx, types.ModuleName, oracleClaim.ToAddress, oracleClaim.Amount,
 	); err != nil {
 		panic(err)
+	}
+
+	return nil
+}
+
+func (k Keeper) ProcessUnpeg(ctx sdk.Context, msg types.MsgUnpeg) error {
+	if err := k.supplyKeeper.SendCoinsFromAccountToModule(
+		ctx, msg.Address, types.ModuleName, msg.Amount,
+	); err != nil {
+		return err
+	}
+
+	if err := k.supplyKeeper.BurnCoins(
+		ctx, types.ModuleName, msg.Amount,
+	); err != nil {
+		return err
 	}
 
 	return nil
@@ -87,6 +111,21 @@ func (k Keeper) ProcessSuccessfulUnpegNotCosignedClaim(ctx sdk.Context, claim st
 	if err != nil {
 		return err
 	}
+
+	//ここで、UnpegしたときにBurnしたCoinを復活させる必要がでてきますね。。。types.MsgUnpegNotCosignedClaimにはAmountの情報が無いので、付け足しましょうか。。。？
+	/*
+		if err := k.supplyKeeper.MintCoins(
+			ctx, types.ModuleName, oracleClaim.Amount,
+		); err != nil {
+			return err
+		}
+
+		if err := k.supplyKeeper.SendCoinsFromModuleToAccount(
+			ctx, types.ModuleName, oracleClaim.ToAddress, oracleClaim.Amount,
+		); err != nil {
+			panic(err)
+		}
+	*/
 
 	for _, notCosignedValidator := range oracleClaim.NotCosignedValidators {
 		k.slashingKeeper.Slash(ctx, sdk.ConsAddress(notCosignedValidator), sdk.NewDec(0), 0, 0)

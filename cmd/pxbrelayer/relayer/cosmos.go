@@ -125,6 +125,16 @@ func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
 		return
 	}
 
+	tx, err := sub.ProximaXClient.Transaction.GetTransaction(context.Background(), cosmosMsg.MainchainTxHash)
+	if err != nil {
+		sub.Logger.Error("Transaction is not found", "err", err)
+		return
+	}
+	if typ := tx.GetAbstractTransaction().Type; typ != proximax.Transfer {
+		sub.Logger.Info("Transaction type is not transfer", "hash", cosmosMsg.MainchainTxHash, "type", typ)
+		return
+	}
+
 	status, err := sub.ProximaXClient.Transaction.GetTransactionStatus(context.Background(), cosmosMsg.MainchainTxHash)
 	if err != nil {
 		sub.Logger.Error("Transaction.GetTransaction returned error", "err", err)
@@ -171,7 +181,11 @@ func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
 	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
 		return
 	}
-	txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, sub.ProximxMultisigPublicKey, msg)
+	err = txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, sub.ProximxMultisigPublicKey, msg)
+	if err != nil {
+		sub.Logger.Error("Failed to Relay Transaction to ProximaX", "err", err)
+		return
+	}
 }
 
 func (sub *CosmosSub) handleRequestInvitation(attributes []tmKv.Pair) {
@@ -183,7 +197,5 @@ func (sub *CosmosSub) handleRequestInvitation(attributes []tmKv.Pair) {
 	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
 		return
 	}
-	// todo: get newCosignerAddress
-	newCosignerAddress := ""
-	txs.RelayInvitation(sub.ProximaXClient, sub.ProximaxPrivateKey, msg, newCosignerAddress)
+	txs.RelayInvitation(sub.ProximaXClient, sub.ProximaxPrivateKey, msg)
 }

@@ -1,6 +1,7 @@
 package proximax_bridge
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -26,6 +27,8 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 			return handleMsgUnpeg(ctx, cdc, accountKeeper, bridgeKeeper, msg)
 		case MsgUnpegNotCosignedClaim:
 			return handleMsgUnpegNotCosignedClaim(ctx, cdc, accountKeeper, bridgeKeeper, msg)
+		case MsgRequestInvitation:
+			return handleMsgRequestInvitation(ctx, cdc, msg)
 
 		//Example:
 		// case MsgSet<Action>:
@@ -40,6 +43,12 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 func handleMsgPeg(
 	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgPeg,
 ) (*sdk.Result, error) {
+	if bridgeKeeper.IsUsedHash(ctx, msg.MainchainTxHash) {
+		err := errors.New(fmt.Sprintf("Transaction has been already pegged: %s", msg.MainchainTxHash))
+		return nil, err
+	}
+
+	// Send to relayer
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -69,6 +78,7 @@ func handleMsgPegClaim(
 		if err := bridgeKeeper.ProcessSuccessfulPegClaim(ctx, status.FinalClaim); err != nil {
 			return nil, err
 		}
+		bridgeKeeper.MarkAsUsedHash(ctx, msg.MainchainTxHash)
 	}
 
 	ctx.EventManager().EmitEvents(sdk.Events{
@@ -97,6 +107,10 @@ func handleMsgUnpeg(
 	ctx sdk.Context, cdc *codec.Codec, accountKeeper auth.AccountKeeper,
 	bridgeKeeper Keeper, msg MsgUnpeg,
 ) (*sdk.Result, error) {
+	err := bridgeKeeper.ProcessUnpeg(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
@@ -141,4 +155,24 @@ func handleMsgUnpegNotCosignedClaim(
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 
+}
+
+func handleMsgRequestInvitation(
+	ctx sdk.Context, cdc *codec.Codec, msg MsgRequestInvitation,
+) (*sdk.Result, error) {
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
+		),
+		sdk.NewEvent(
+			types.EventTypeInvitation,
+			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
+			sdk.NewAttribute(types.AttributeKeyMultisigAccountAddress, msg.MultisigAccountAddress),
+			sdk.NewAttribute(types.AttributeKeyNewCosignerPublicKey, msg.NewCosignerPublicKey),
+			sdk.NewAttribute(types.AttributeKeyFirstCosignerAddress, msg.FirstCosignerAddress.String()),
+		),
+	})
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
