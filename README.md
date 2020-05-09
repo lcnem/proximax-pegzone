@@ -4,6 +4,32 @@
 - d,cli,relayer の 3 部設計。
 - `1000000000` `stake`のネイティブトークン。
 
+## Install
+
+Sample of Ubuntu 20.04
+
+```shell
+apt update
+apt install build-essential
+cd ~
+wget https://dl.google.com/go/go1.14.linux-amd64.tar.gz
+tar -C /usr/local -xzf go1.14.linux-amd64.tar.gz
+echo export PATH='$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
+source ~/.bashrc
+mkdir -p /usr/local/src/lcnem/
+cd /usr/local/src/github.com/lcnem
+git clone https://github.com/lcnem/proximax-bridge.git
+cd proximax-bridge
+git checkout vX.X.X
+make install
+```
+
+## Config
+
+```shell
+vi $HOME/.pxbd/config/config.toml
+```
+
 ## Start multiple nodes by docker-compose
 
 ```
