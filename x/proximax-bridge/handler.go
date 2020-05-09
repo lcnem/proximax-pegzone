@@ -97,6 +97,10 @@ func handleMsgUnpeg(
 	ctx sdk.Context, cdc *codec.Codec, accountKeeper auth.AccountKeeper,
 	bridgeKeeper Keeper, msg MsgUnpeg,
 ) (*sdk.Result, error) {
+	err := bridgeKeeper.ProcessUnpeg(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
