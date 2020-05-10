@@ -1,8 +1,6 @@
 package txs
 
 import (
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmKv "github.com/tendermint/tendermint/libs/kv"
 
@@ -38,74 +36,6 @@ func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
 		return nil, err
 	}
 	cosmosMsg := msgTypes.NewMsgPeg(cosmosSender, mainchainTxHash, toAddress, amount)
-	return &cosmosMsg, nil
-}
-
-func UnpegNotCosignedClaimEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpegNotCosignedClaim, error) {
-	var address sdk.ValAddress
-	var txHash string
-	var notCosignedValidators []sdk.ValAddress
-	var err error
-
-	for _, attribute := range attributes {
-		key := string(attribute.GetKey())
-		val := string(attribute.GetValue())
-		switch key {
-		case "cosmos_sender":
-			address, err = sdk.ValAddressFromBech32(val)
-			break
-		case "tx_hash":
-			txHash = val
-			break
-		case "not_cosigned_validators":
-			for _, addr := range strings.Split(val, ",") {
-				valAddress, err := sdk.ValAddressFromBech32(addr)
-				if err != nil {
-					break
-				}
-				notCosignedValidators = append(notCosignedValidators, valAddress)
-			}
-			break
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	cosmosMsg := msgTypes.NewMsgUnpegNotCosignedClaim(address, txHash, notCosignedValidators)
-	return &cosmosMsg, nil
-}
-
-func InvitationNotCosignedClaimEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgInvitationNotCosignedClaim, error) {
-	var address sdk.ValAddress
-	var txHash string
-	var notCosignedValidators []sdk.ValAddress
-	var err error
-
-	for _, attribute := range attributes {
-		key := string(attribute.GetKey())
-		val := string(attribute.GetValue())
-		switch key {
-		case "cosmos_sender":
-			address, err = sdk.ValAddressFromBech32(val)
-			break
-		case "tx_hash":
-			txHash = val
-			break
-		case "not_cosigned_validators":
-			for _, addr := range strings.Split(val, ",") {
-				valAddress, err := sdk.ValAddressFromBech32(addr)
-				if err != nil {
-					break
-				}
-				notCosignedValidators = append(notCosignedValidators, valAddress)
-			}
-			break
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	cosmosMsg := msgTypes.NewMsgInvitationNotCosignedClaim(address, txHash, notCosignedValidators)
 	return &cosmosMsg, nil
 }
 

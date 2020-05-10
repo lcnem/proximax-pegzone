@@ -113,19 +113,17 @@ func (k Keeper) ProcessSuccessfulUnpegNotCosignedClaim(ctx sdk.Context, claim st
 	}
 
 	//ここで、UnpegしたときにBurnしたCoinを復活させる必要がでてきますね。。。types.MsgUnpegNotCosignedClaimにはAmountの情報が無いので、付け足しましょうか。。。？
-	/*
-		if err := k.supplyKeeper.MintCoins(
-			ctx, types.ModuleName, oracleClaim.Amount,
-		); err != nil {
-			return err
-		}
+	if err := k.supplyKeeper.MintCoins(
+		ctx, types.ModuleName, oracleClaim.Amount,
+	); err != nil {
+		return err
+	}
 
-		if err := k.supplyKeeper.SendCoinsFromModuleToAccount(
-			ctx, types.ModuleName, oracleClaim.ToAddress, oracleClaim.Amount,
-		); err != nil {
-			panic(err)
-		}
-	*/
+	if err := k.supplyKeeper.SendCoinsFromModuleToAccount(
+		ctx, types.ModuleName, sdk.AccAddress(oracleClaim.Address), oracleClaim.Amount,
+	); err != nil {
+		panic(err)
+	}
 
 	for _, notCosignedValidator := range oracleClaim.NotCosignedValidators {
 		k.slashingKeeper.Slash(ctx, sdk.ConsAddress(notCosignedValidator), sdk.NewDec(0), 0, 0)

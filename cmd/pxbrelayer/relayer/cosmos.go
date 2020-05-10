@@ -96,17 +96,11 @@ func (sub *CosmosSub) Start(exitSignal chan os.Signal) {
 				case "peg":
 					sub.handlePegEvent(attributes)
 					break
-				case "unpeg_not_cosigned_claim":
-					sub.handleUnpegNotCosignedClaim(attributes)
-					break
-				case "invitation_not_cosigned_claim":
-					sub.handleUnpegNotCosignedClaim(attributes)
-					break
 				case "unpeg":
-					sub.handleUnpeg(attributes)
+					sub.handleUnpegEvent(attributes)
 					break
 				case "request_invitation":
-					sub.handleRequestInvitation(attributes)
+					sub.handleRequestInvitationEvent(attributes)
 					break
 				default:
 					break
@@ -154,25 +148,7 @@ func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
 	}
 }
 
-func (sub *CosmosSub) handleUnpegNotCosignedClaim(attributes []tmKv.Pair) {
-	msg, err := txs.UnpegNotCosignedClaimEventToCosmosMsg(attributes)
-	if err != nil {
-		sub.Logger.Error("Failed to convert UnpegNotCosignedClaim event to Cosmos Message", "err", err)
-		return
-	}
-	txs.RelayUnpegNotCosigned(sub.Cdc, sub.RpcUrl, sub.ChainId, msg, sub.ValidatorMonkier)
-}
-
-func (sub *CosmosSub) handleInvitationNotCosignedClaim(attributes []tmKv.Pair) {
-	msg, err := txs.InvitationNotCosignedClaimEventToCosmosMsg(attributes)
-	if err != nil {
-		sub.Logger.Error("Failed to convert InvitationNotCosignedClaim event to Cosmos Message", "err", err)
-		return
-	}
-	txs.RelayInvitationNotCosigned(sub.Cdc, sub.RpcUrl, sub.ChainId, msg, sub.ValidatorMonkier)
-}
-
-func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
+func (sub *CosmosSub) handleUnpegEvent(attributes []tmKv.Pair) {
 	msg, err := txs.UnpegEventToCosmosMsg(attributes)
 	if err != nil {
 		sub.Logger.Error("Failed to convert Unpeg event to Cosmos Message", "err", err)
@@ -188,7 +164,7 @@ func (sub *CosmosSub) handleUnpeg(attributes []tmKv.Pair) {
 	}
 }
 
-func (sub *CosmosSub) handleRequestInvitation(attributes []tmKv.Pair) {
+func (sub *CosmosSub) handleRequestInvitationEvent(attributes []tmKv.Pair) {
 	msg, err := txs.RequestInvitationEventToCosmosMsg(attributes)
 	if err != nil {
 		sub.Logger.Error("Failed to convert RequestInvitation event to Cosmos Message", "err", err)

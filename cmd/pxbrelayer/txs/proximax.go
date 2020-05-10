@@ -4,7 +4,7 @@ import (
 	"context"
 	"math"
 	"time"
-
+	"encoding/json"
 	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 	"github.com/proximax-storage/go-xpx-chain-sdk/sdk"
 )
@@ -39,12 +39,17 @@ func RelayUnpeg(client *sdk.Client, firstCosignatoryPrivateKey, multisigPublicKe
 		return err
 	}
 
+	txMsg, err := json.Marshal(msg)
+    if err != nil {
+		return err
+    }
+
 	amount := msg.Amount[0].Amount.BigInt().Uint64()
 	transferTx, err := client.NewTransferTransaction(
 		sdk.NewDeadline(time.Hour*1),
 		sdk.NewAddress(msg.MainchainAddress, client.NetworkType()),
 		[]*sdk.Mosaic{sdk.XpxRelative(amount)},
-		sdk.NewPlainMessage(""),
+		sdk.NewPlainMessage(string(txMsg)),
 	)
 	if err != nil {
 		return err
