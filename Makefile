@@ -5,8 +5,8 @@ COMMIT := $(shell git log -1 --format='%H')
 
 # TODO: Update the ldflags with the app, client & server names
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=NewApp \
-	-X github.com/cosmos/cosmos-sdk/version.ServerName=asd \
-	-X github.com/cosmos/cosmos-sdk/version.ClientName=ascli \
+	-X github.com/cosmos/cosmos-sdk/version.ServerName=pxbd \
+	-X github.com/cosmos/cosmos-sdk/version.ClientName=pxbcli \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) 
 
