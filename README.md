@@ -55,7 +55,7 @@ pxbcli tx proximaxbridge peg [key_or_address] [mainchain_tx_hash] [to_address] [
 #### Unpeg
 
 ```shell
-pxbcli tx proximaxbridge unpeg [key_or_address] [amount] [mainchain_address] [first_cosigner_address]
+pxbcli tx proximaxbridge unpeg [key_or_address] [from_address] [mainchain_address] [amount] [first_cosigner_address]
 ```
 
 #### Request Invitation

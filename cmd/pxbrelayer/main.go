@@ -86,10 +86,10 @@ var initCmd = &cobra.Command{
 
 func proximaxRelayerCmd() *cobra.Command {
 	ethereumRelayerCmd := &cobra.Command{
-		Use:     "proximax [validator_from_name] [proximax_node] [proximax_private_key] [proximax_multisig_address] --chain-id [chain-id]",
+		Use:     "proximax init [validator_from_name] [tendermint_node] [proximax_node] [proximax_private_key] [proximax_multisig_address] --chain-id [chain-id]",
 		Short:   "Initializes a web socket which streams live events from the ProximaX network and relays them to the Cosmos network",
-		Args:    cobra.ExactArgs(4),
-		Example: "pxbrelayer init proximax http://localhost:7545 validator --chain-id=testing",
+		Args:    cobra.ExactArgs(5),
+		Example: "pxbrelayer init proximax validator http://localhost:7475 http://bctestnet1.brimstone.xpxsirius.io:3000 3A700AE4105431BB0F24440AAA0CD08E1FD0D87D60EB805278F7DB3EA7C7D62D VBK6ZOASJSJOFUOX7XUHHZVCBO4Q11GCF726AKHG --chain-id=testing",
 		RunE:    RunProximaxRelayerCmd,
 	}
 
@@ -98,7 +98,7 @@ func proximaxRelayerCmd() *cobra.Command {
 
 func cosmosRelayerCmd() *cobra.Command {
 	cosmosRelayerCmd := &cobra.Command{
-		Use:     "cosmos [tendermint_node] [proximax_node] [validator_moniker] [proximax_cosigner_private_key] [multisig_account_public_key] --chain-id [chain-id]",
+		Use:     "cosmos init [tendermint_node] [proximax_node] [validator_moniker] [proximax_cosigner_private_key] [multisig_account_public_key] --chain-id [chain-id]",
 		Short:   "Initializes a web socket which streams live events from the Cosmos network and relays them to the ProximaX network",
 		Args:    cobra.ExactArgs(5),
 		Example: "pxbrelayer init cosmos tcp://localhost:26657 http://localhost:7545 --chain-id=testing",
@@ -110,8 +110,12 @@ func cosmosRelayerCmd() *cobra.Command {
 
 // RunProximaxRelayerCmd executes the initProximaxRelayerCmd with the provided parameters
 func RunProximaxRelayerCmd(cmd *cobra.Command, args []string) error {
-	inBuf := bufio.NewReader(cmd.InOrStdin())
+	chainID := viper.GetString(flags.FlagChainID)
+	if strings.TrimSpace(chainID) == "" {
+		return errors.New("Must specify a 'chain-id'")
+	}
 
+	inBuf := bufio.NewReader(cmd.InOrStdin())
 	// Get the validator's name and account address using their moniker
 	validatorAccAddress, validatorName, err := sdkContext.GetFromFields(inBuf, args[0], false)
 	if err != nil {
@@ -119,17 +123,22 @@ func RunProximaxRelayerCmd(cmd *cobra.Command, args []string) error {
 	}
 	validatorAddress := sdk.ValAddress(validatorAccAddress)
 
-	proximaxNode := args[1]
-	if len(strings.Trim(proximaxNode, "")) == 0 {
-		return errors.New(fmt.Sprintf("invalid [proximax_node-node]: %s", proximaxNode))
+	tendermintNode := args[1]
+	if len(strings.Trim(tendermintNode, "")) == 0 {
+		return errors.New(fmt.Sprintf("invalid [tendermint_node]: %s", tendermintNode))
 	}
 
-	proximaxCosignerPrivateKey := args[2]
+	proximaxNode := args[2]
+	if len(strings.Trim(proximaxNode, "")) == 0 {
+		return errors.New(fmt.Sprintf("invalid [proximax_node]: %s", proximaxNode))
+	}
+
+	proximaxCosignerPrivateKey := args[3]
 	if len(strings.Trim(proximaxCosignerPrivateKey, "")) == 0 {
 		return errors.New(fmt.Sprintf("invalid [proximax_private_key]: %s", proximaxCosignerPrivateKey))
 	}
 
-	proximaxMultisigPublicKey := args[3]
+	proximaxMultisigPublicKey := args[4]
 	if len(strings.Trim(proximaxMultisigPublicKey, "")) == 0 {
 		return errors.New(fmt.Sprintf("invalid [proximax_multisig_address]: %s", proximaxMultisigPublicKey))
 	}
@@ -142,7 +151,7 @@ func RunProximaxRelayerCmd(cmd *cobra.Command, args []string) error {
 
 	logger := tmLog.NewTMLogger(tmLog.NewSyncWriter(os.Stdout))
 
-	return relayer.InitProximaXRelayer(appCodec, cliCtx, logger, proximaxNode, proximaxCosignerPrivateKey, proximaxMultisigPublicKey)
+	return relayer.InitProximaXRelayer(appCodec, cliCtx, logger, tendermintNode, chainID, proximaxNode, proximaxCosignerPrivateKey, proximaxMultisigPublicKey, validatorAddress, validatorName)
 }
 
 // RunCosmosRelayerCmd executes the initCosmosRelayerCmd with the provided parameters

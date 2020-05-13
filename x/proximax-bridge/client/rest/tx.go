@@ -43,6 +43,7 @@ func UnpegRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		// TODO: Define the module tx logic for this action
 		msg := types.NewMsgUnpeg(
 			address,
+			address,
 			req.MainchainAddress,
 			req.Amount,
 			firstCosignerAddress,

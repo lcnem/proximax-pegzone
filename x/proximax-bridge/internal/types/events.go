@@ -17,6 +17,7 @@ const (
 	AttributeKeyMultisigCustodyAddress = "multisig_custody_address"
 	AttributeKeyMultisigAccountAddress = "multisig_address"
 	AttributeKeyCosmosSender           = "cosmos_sender"
+	AttributeKeyCosmosAccount          = "cosmos_account"
 	AttributeKeyMainchainAddress       = "mainchain_address"
 	AttributeKeyNewCosignerPublicKey   = "new_cosigner_public_key"
 

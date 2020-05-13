@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 	proximax "github.com/proximax-storage/go-xpx-chain-sdk/sdk"
 	"github.com/proximax-storage/go-xpx-utils/logger"
 	tmKv "github.com/tendermint/tendermint/libs/kv"
@@ -51,7 +52,6 @@ func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, vali
 }
 
 func (sub *CosmosSub) Start(exitSignal chan os.Signal) {
-	fmt.Printf("ProximaXProvider: %s\n", sub.ProximaXProvider)
 	conf, err := proximax.NewConfig(context.Background(), []string{sub.ProximaXProvider})
 	if err != nil {
 		sub.Logger.Error("Failed to initialize ProximaX client", "err", err)
@@ -157,10 +157,16 @@ func (sub *CosmosSub) handleUnpegEvent(attributes []tmKv.Pair) {
 	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
 		return
 	}
-	err = txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, sub.ProximxMultisigPublicKey, msg)
+	txHash, err := txs.RelayUnpeg(sub.ProximaXClient, sub.ProximaxPrivateKey, sub.ProximxMultisigPublicKey, msg)
 	if err != nil {
 		sub.Logger.Error("Failed to Relay Transaction to ProximaX", "err", err)
 		return
+	}
+
+	recordMsg := msgTypes.NewMsgRecordUnpeg(msg.Address, msg.FromAddress, txHash, msg.Amount)
+	err = txs.RelayRecordUnpeg(sub.Cdc, sub.RpcUrl, sub.ChainId, &recordMsg, sub.ValidatorMonkier, msg.FirstCosignerAddress)
+	if err != nil {
+		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
 	}
 }
 
