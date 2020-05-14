@@ -11,6 +11,8 @@ const (
 	ModuleName        = types.ModuleName
 	RouterKey         = types.RouterKey
 	StoreKey          = types.StoreKey
+	StoreKeyForPeg    = types.StoreKeyForPeg
+	StoreKeyForUnpeg  = types.StoreKeyForUnpeg
 	DefaultParamspace = types.DefaultParamspace
 	QuerierRoute      = types.QuerierRoute
 )
@@ -27,6 +29,7 @@ var (
 	NewMsgPeg                        = types.NewMsgPeg
 	NewMsgPegClaim                   = types.NewMsgPegClaim
 	NewMsgUnpeg                      = types.NewMsgUnpeg
+	NewMsgRecordUnpeg                = types.NewMsgRecordUnpeg
 	NewMsgUnpegNotCosignedClaim      = types.NewMsgUnpegNotCosignedClaim
 	NewMsgRequestInvitation          = types.NewMsgRequestInvitation
 	NewMsgInvitationNotCosignedClaim = types.NewMsgMsgInvitationNotCosignedClaim
@@ -45,6 +48,7 @@ type (
 	MsgPeg                        = types.MsgPeg
 	MsgPegClaim                   = types.MsgPegClaim
 	MsgUnpeg                      = types.MsgUnpeg
+	MsgRecordUnpeg                = types.MsgRecordUnpeg
 	MsgUnpegNotCosignedClaim      = types.MsgUnpegNotCosignedClaim
 	MsgRequestInvitation          = types.MsgRequestInvitation
 	MsgInvitationNotCosignedClaim = types.MsgInvitationNotCosignedClaim
