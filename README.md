@@ -18,8 +18,8 @@ echo export PATH='$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
 source ~/.bashrc
 mkdir -p /usr/local/src/lcnem/
 cd /usr/local/src/github.com/lcnem
-git clone https://github.com/lcnem/proximax-bridge.git
-cd proximax-bridge
+git clone https://github.com/lcnem/proximax-pegzone.git
+cd proximax-pegzone
 git checkout vX.X.X
 make install
 ```
