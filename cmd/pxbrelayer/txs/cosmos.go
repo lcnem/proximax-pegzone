@@ -68,14 +68,18 @@ func RelayPeg(
 	return nil
 }
 
-func RelayUnpegNotCosigned(
+func RelayRecordUnpeg(
 	cdc *codec.Codec,
 	rpcURL string,
 	chainID string,
-	msg *types.MsgUnpegNotCosignedClaim,
+	msg *types.MsgRecordUnpeg,
 	moniker string,
+	validatorAddress sdk.ValAddress,
 ) error {
-	cliCtx := sdkContext.NewCLIContext()
+	cliCtx := sdkContext.NewCLIContext().
+		WithCodec(cdc).
+		WithFromAddress(msg.Address)
+
 	if rpcURL != "" {
 		cliCtx = cliCtx.WithNodeURI(rpcURL)
 	}
@@ -106,6 +110,50 @@ func RelayUnpegNotCosigned(
 	}
 
 	if err = cliCtx.PrintOutput(res); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RelayUnpegNotCosigned(
+	cdc *codec.Codec,
+	cli sdkContext.CLIContext,
+	rpcURL string,
+	chainID string,
+	msg types.MsgUnpegNotCosignedClaim,
+	validatorMoniker string,
+) error {
+
+	if rpcURL != "" {
+		cli = cli.WithNodeURI(rpcURL)
+	}
+	cli.SkipConfirm = true
+
+	txBldr := authtypes.NewTxBuilderFromCLI(nil).
+		WithTxEncoder(utils.GetTxEncoder(cdc)).
+		WithChainID(chainID)
+
+	err := msg.ValidateBasic()
+	if err != nil {
+		return err
+	}
+
+	txBldr, err = utils.PrepareTxBuilder(txBldr, cli)
+	if err != nil {
+		return err
+	}
+
+	txBytes, err := txBldr.BuildAndSign(validatorMoniker, keys.DefaultKeyPass, []sdk.Msg{msg})
+	if err != nil {
+		return err
+	}
+
+	res, err := cli.BroadcastTxSync(txBytes)
+	if err != nil {
+		return err
+	}
+
+	if err = cli.PrintOutput(res); err != nil {
 		return err
 	}
 	return nil

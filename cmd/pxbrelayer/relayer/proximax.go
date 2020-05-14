@@ -10,6 +10,9 @@ import (
 
 	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cosmosSdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/lcnem/proximax-pegzone/cmd/pxbrelayer/txs"
+	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 	"github.com/proximax-storage/go-xpx-chain-sdk/sdk"
 	"github.com/proximax-storage/go-xpx-chain-sdk/sdk/websocket"
 	tmLog "github.com/tendermint/tendermint/libs/log"
@@ -17,11 +20,15 @@ import (
 
 func InitProximaXRelayer(
 	cdc *codec.Codec,
-	cliContext sdkContext.CLIContext,
+	cli sdkContext.CLIContext,
 	logger tmLog.Logger,
+	tendermintNode string,
+	chainID string,
 	proximaxNode string,
 	proximaxPrivateKey string,
 	proximaxMultisigAddress string,
+	validatorAddress cosmosSdk.ValAddress,
+	validatorMoniker string,
 ) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*30)
 	defer cancel()
@@ -44,6 +51,17 @@ func InitProximaXRelayer(
 
 	err = wsClient.AddPartialAddedHandlers(account.Address, func(tx *sdk.AggregateTransaction) bool {
 		partialAddedHandler(client, logger, account, tx)
+		return false
+	})
+
+	err = wsClient.AddStatusHandlers(account.Address, func(info *sdk.StatusInfo) bool {
+		hash := info.Hash.String()
+
+		msg := msgTypes.NewMsgUnpegNotCosignedClaim(validatorAddress, hash)
+		err := txs.RelayUnpegNotCosigned(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
+		if err != nil {
+			logger.Error("Failed to Relay UnpegNotCosigned", "err", err)
+		}
 		return false
 	})
 

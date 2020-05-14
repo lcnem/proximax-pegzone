@@ -25,6 +25,8 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 			return handleMsgPegClaim(ctx, cdc, bridgeKeeper, msg)
 		case MsgUnpeg:
 			return handleMsgUnpeg(ctx, cdc, accountKeeper, bridgeKeeper, msg)
+		case MsgRecordUnpeg:
+			return handleMsgRecordUnpeg(ctx, cdc, bridgeKeeper, msg)
 		case MsgUnpegNotCosignedClaim:
 			return handleMsgUnpegNotCosignedClaim(ctx, cdc, accountKeeper, bridgeKeeper, msg)
 		case MsgRequestInvitation:
@@ -70,6 +72,7 @@ func handleMsgPeg(
 func handleMsgPegClaim(
 	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgPegClaim,
 ) (*sdk.Result, error) {
+
 	status, err := bridgeKeeper.ProcessPegClaim(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -111,7 +114,6 @@ func handleMsgUnpeg(
 	if err != nil {
 		return nil, err
 	}
-
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -121,6 +123,7 @@ func handleMsgUnpeg(
 		sdk.NewEvent(
 			types.EventTypeUnpeg,
 			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
+			sdk.NewAttribute(types.AttributeKeyCosmosAccount, msg.FromAddress.String()),
 			sdk.NewAttribute(types.AttributeKeyMainchainAddress, msg.MainchainAddress),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyFirstCosignerAddress, msg.FirstCosignerAddress.String()),
@@ -128,7 +131,11 @@ func handleMsgUnpeg(
 	})
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
 
+func handleMsgRecordUnpeg(ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgRecordUnpeg) (*sdk.Result, error) {
+	bridgeKeeper.SetUnpegRecord(ctx, msg.MainchainTxHash, msg.FromAddress, msg.Amount)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func handleMsgUnpegNotCosignedClaim(
