@@ -159,6 +159,50 @@ func RelayUnpegNotCosigned(
 	return nil
 }
 
+func RelayNotifyCosigned(
+	cdc *codec.Codec,
+	cli sdkContext.CLIContext,
+	rpcURL string,
+	chainID string,
+	msg types.MsgNotifyCosigned,
+	validatorMoniker string,
+) error {
+
+	if rpcURL != "" {
+		cli = cli.WithNodeURI(rpcURL)
+	}
+	cli.SkipConfirm = true
+
+	txBldr := authtypes.NewTxBuilderFromCLI(nil).
+		WithTxEncoder(utils.GetTxEncoder(cdc)).
+		WithChainID(chainID)
+
+	err := msg.ValidateBasic()
+	if err != nil {
+		return err
+	}
+
+	txBldr, err = utils.PrepareTxBuilder(txBldr, cli)
+	if err != nil {
+		return err
+	}
+
+	txBytes, err := txBldr.BuildAndSign(validatorMoniker, keys.DefaultKeyPass, []sdk.Msg{msg})
+	if err != nil {
+		return err
+	}
+
+	res, err := cli.BroadcastTxSync(txBytes)
+	if err != nil {
+		return err
+	}
+
+	if err = cli.PrintOutput(res); err != nil {
+		return err
+	}
+	return nil
+}
+
 func RelayInvitationNotCosigned(
 	cdc *codec.Codec,
 	rpcURL string,

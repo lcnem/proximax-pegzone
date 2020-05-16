@@ -147,19 +147,21 @@ var _ sdk.Msg = &MsgRecordUnpeg{}
 
 // MsgUnpeg - struct for unjailing jailed validator
 type MsgRecordUnpeg struct {
-	Address         sdk.AccAddress `json:"address" yaml:"address"`
-	FromAddress     sdk.AccAddress `json:"from_address" yaml:"from_address"`
-	MainchainTxHash string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
-	Amount          sdk.Coins      `json:"amount" yaml:"amount"`
+	Address                sdk.AccAddress `json:"address" yaml:"address"`
+	FromAddress            sdk.AccAddress `json:"from_address" yaml:"from_address"`
+	MainchainTxHash        string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	Amount                 sdk.Coins      `json:"amount" yaml:"amount"`
+	FirstCosignerPublicKey string         `json:"first_cosigner_public_key" yaml:"first_cosigner_public_key"`
 }
 
 // NewMsgUnpeg creates a new MsgUnpeg instance
-func NewMsgRecordUnpeg(address, fromAddress sdk.AccAddress, mainchainTxHash string, amount sdk.Coins) MsgRecordUnpeg {
+func NewMsgRecordUnpeg(address, fromAddress sdk.AccAddress, mainchainTxHash string, amount sdk.Coins, firstCosignerPublicKey string) MsgRecordUnpeg {
 	return MsgRecordUnpeg{
-		Address:         address,
-		FromAddress:     fromAddress,
-		MainchainTxHash: mainchainTxHash,
-		Amount:          amount,
+		Address:                address,
+		FromAddress:            fromAddress,
+		MainchainTxHash:        mainchainTxHash,
+		Amount:                 amount,
+		FirstCosignerPublicKey: firstCosignerPublicKey,
 	}
 }
 
@@ -180,6 +182,47 @@ func (msg MsgRecordUnpeg) GetSignBytes() []byte {
 
 // ValidateBasic validity check for the AnteHandler
 func (msg MsgRecordUnpeg) ValidateBasic() error {
+	if msg.Address.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
+	}
+	return nil
+}
+
+var _ sdk.Msg = &MsgNotifyCosigned{}
+
+// MsgUnpeg - struct for unjailing jailed validator
+type MsgNotifyCosigned struct {
+	Address           sdk.ValAddress `json:"address" yaml:"address"`
+	MainchainTxHash   string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	CosignerPublicKey string         `json:"cosigner_public_key" yaml:"cosigner_public_key"`
+}
+
+// NewMsgUnpeg creates a new MsgUnpeg instance
+func NewMsgNotifyCosigned(address sdk.ValAddress, mainchainTxHash, cosignerPublicKey string) MsgNotifyCosigned {
+	return MsgNotifyCosigned{
+		Address:           address,
+		MainchainTxHash:   mainchainTxHash,
+		CosignerPublicKey: cosignerPublicKey,
+	}
+}
+
+const notifyCosignedConst = "notify_cosigned"
+
+// nolint
+func (msg MsgNotifyCosigned) Route() string { return RouterKey }
+func (msg MsgNotifyCosigned) Type() string  { return notifyCosignedConst }
+func (msg MsgNotifyCosigned) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+}
+
+// GetSignBytes gets the bytes for the message signer to sign on
+func (msg MsgNotifyCosigned) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+// ValidateBasic validity check for the AnteHandler
+func (msg MsgNotifyCosigned) ValidateBasic() error {
 	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}

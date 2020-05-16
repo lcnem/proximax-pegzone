@@ -48,6 +48,10 @@ func InitProximaXRelayer(
 	if err != nil {
 		return err
 	}
+	multisigAccount, err := client.NewAccountFromPublicKey(proximaxMultisigAddress)
+	if err != nil {
+		return err
+	}
 
 	err = wsClient.AddPartialAddedHandlers(account.Address, func(tx *sdk.AggregateTransaction) bool {
 		partialAddedHandler(client, logger, account, tx)
@@ -63,6 +67,19 @@ func InitProximaXRelayer(
 			logger.Error("Failed to Relay UnpegNotCosigned", "err", err)
 		}
 		return false
+	})
+
+	err = wsClient.AddCosignatureHandlers(multisigAccount.Address, func(info *sdk.SignerInfo) bool {
+		txHash := info.ParentHash.String()
+		signerPublicKey := info.Signer
+
+		msg := msgTypes.NewMsgNotifyCosigned(validatorAddress, txHash, signerPublicKey)
+		err := txs.RelayNotifyCosigned(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
+		if err != nil {
+			logger.Error("Failed to Relay UnpegNotCosigned", "err", err)
+		}
+
+		return true
 	})
 
 	go wsClient.Listen()

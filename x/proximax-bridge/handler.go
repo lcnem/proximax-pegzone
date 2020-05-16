@@ -19,6 +19,7 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 		switch msg := msg.(type) {
 		// TODO: Define your msg cases
 		//
+
 		case MsgPeg:
 			return handleMsgPeg(ctx, cdc, bridgeKeeper, msg)
 		case MsgPegClaim:
@@ -27,6 +28,8 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 			return handleMsgUnpeg(ctx, cdc, accountKeeper, bridgeKeeper, msg)
 		case MsgRecordUnpeg:
 			return handleMsgRecordUnpeg(ctx, cdc, bridgeKeeper, msg)
+		case MsgNotifyCosigned:
+			return handleMsgNotifyCosigned(ctx, cdc, bridgeKeeper, msg)
 		case MsgUnpegNotCosignedClaim:
 			return handleMsgUnpegNotCosignedClaim(ctx, cdc, accountKeeper, bridgeKeeper, msg)
 		case MsgRequestInvitation:
@@ -135,6 +138,12 @@ func handleMsgUnpeg(
 
 func handleMsgRecordUnpeg(ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgRecordUnpeg) (*sdk.Result, error) {
 	bridgeKeeper.SetUnpegRecord(ctx, msg.MainchainTxHash, msg.FromAddress, msg.Amount)
+	bridgeKeeper.SetCosigners(ctx, msg.MainchainTxHash, msg.FirstCosignerPublicKey)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgNotifyCosigned(ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgNotifyCosigned) (*sdk.Result, error) {
+	bridgeKeeper.SetCosigners(ctx, msg.MainchainTxHash, msg.CosignerPublicKey)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
