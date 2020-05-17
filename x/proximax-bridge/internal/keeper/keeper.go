@@ -213,13 +213,12 @@ func (k Keeper) ProcessSuccessfulUnpegNotCosignedClaim(ctx sdk.Context, claim st
 	notCosignedValidatorAddrs := []sdk.ValAddress{}
 	for _, cosigner := range param.Cosigners {
 		if !searchStringFromArray(cosignerRecord.CosignerPublicKeys, cosigner.MainchainPublicKey) {
-			valAddress, _ := sdk.ValAddressFromBech32(cosigner.ValidatorAddress)
-			if err != nil {
+			valAddress, err := sdk.ValAddressFromBech32(cosigner.ValidatorAddress)
+			if err == nil {
 				notCosignedValidatorAddrs = append(notCosignedValidatorAddrs, valAddress)
 			}
 		}
 	}
-	fmt.Printf("NotCosigned Validators: %+v\n", notCosignedValidatorAddrs)
 
 	for _, notCosignedValidator := range notCosignedValidatorAddrs {
 		k.slashingKeeper.Slash(ctx, sdk.ConsAddress(notCosignedValidator), sdk.NewDec(0), 0, 0)
