@@ -9,7 +9,7 @@ const (
 
 	StoreKeyForPeg = ModuleName + "_peg"
 
-	StoreKeyForUnpeg = ModuleName + "_unpeg"
+	StoreKeyForCosign = ModuleName + "_cosign"
 
 	// RouterKey to be used for routing msgs
 	RouterKey = ModuleName

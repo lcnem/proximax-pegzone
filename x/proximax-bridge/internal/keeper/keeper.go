@@ -15,27 +15,27 @@ import (
 
 // Keeper of the proximax-bridge store
 type Keeper struct {
-	storeKey         sdk.StoreKey
-	storeKeyForPeg   sdk.StoreKey
-	storeKeyForUnpeg sdk.StoreKey
-	cdc              *codec.Codec
-	paramspace       types.ParamSubspace
-	supplyKeeper     types.SupplyKeeper
-	slashingKeeper   types.SlashingKeeper
-	oracleKeeper     types.OracleKeeper
+	storeKey          sdk.StoreKey
+	storeKeyForPeg    sdk.StoreKey
+	storeKeyForCosign sdk.StoreKey
+	cdc               *codec.Codec
+	paramspace        types.ParamSubspace
+	supplyKeeper      types.SupplyKeeper
+	slashingKeeper    types.SlashingKeeper
+	oracleKeeper      types.OracleKeeper
 }
 
 // NewKeeper creates a proximax-bridge keeper
-func NewKeeper(cdc *codec.Codec, key, keyForPeg, keyForUnpeg sdk.StoreKey, paramspace types.ParamSubspace, supplyKeeper types.SupplyKeeper, slashingKeeper types.SlashingKeeper, oracleKeeper types.OracleKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, key, keyForPeg, keyForCosign sdk.StoreKey, paramspace types.ParamSubspace, supplyKeeper types.SupplyKeeper, slashingKeeper types.SlashingKeeper, oracleKeeper types.OracleKeeper) Keeper {
 	keeper := Keeper{
-		storeKey:         key,
-		storeKeyForPeg:   keyForPeg,
-		storeKeyForUnpeg: keyForUnpeg,
-		cdc:              cdc,
-		paramspace:       paramspace.WithKeyTable(types.ParamKeyTable()),
-		supplyKeeper:     supplyKeeper,
-		slashingKeeper:   slashingKeeper,
-		oracleKeeper:     oracleKeeper,
+		storeKey:          key,
+		storeKeyForPeg:    keyForPeg,
+		storeKeyForCosign: keyForCosign,
+		cdc:               cdc,
+		paramspace:        paramspace.WithKeyTable(types.ParamKeyTable()),
+		supplyKeeper:      supplyKeeper,
+		slashingKeeper:    slashingKeeper,
+		oracleKeeper:      oracleKeeper,
 	}
 	return keeper
 }
@@ -77,6 +77,40 @@ func (k Keeper) GetUnpegRecord(ctx sdk.Context, mainChainTxHash string) (UnpegRe
 	unpegBytes := ctx.KVStore(k.storeKeyForPeg).Get([]byte(mainChainTxHash))
 	err := json.Unmarshal(unpegBytes, &unpeg)
 	return unpeg, err
+}
+
+type CosignersRecord struct {
+	MainchainTxHadh    string   `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	CosignerPublicKeys []string `json:"cosigner_public_keys" yaml:"cosigner_public_keys"`
+}
+
+func (k Keeper) SetCosigners(ctx sdk.Context, mainChainTxHash string, cosignerPublicKey string) error {
+	cosignerRecord, err := k.GetCosignersRecord(ctx, mainChainTxHash)
+	if err != nil {
+		cosignerRecord = CosignersRecord{MainchainTxHadh: mainChainTxHash, CosignerPublicKeys: []string{}}
+	}
+	for _, key := range cosignerRecord.CosignerPublicKeys {
+		if key == cosignerPublicKey {
+			return nil
+		}
+	}
+	cosignerRecord.CosignerPublicKeys = append(cosignerRecord.CosignerPublicKeys, cosignerPublicKey)
+	cosignerRecordBytes, err := json.Marshal(cosignerRecord)
+	if err != nil {
+		return err
+	}
+	ctx.KVStore(k.storeKeyForCosign).Set([]byte(mainChainTxHash), cosignerRecordBytes)
+	return nil
+}
+
+func (k Keeper) GetCosignersRecord(ctx sdk.Context, mainChainTxHash string) (CosignersRecord, error) {
+	cosignersRecord := CosignersRecord{}
+	if !ctx.KVStore(k.storeKeyForCosign).Has([]byte(mainChainTxHash)) {
+		return cosignersRecord, errors.New(fmt.Sprintf("CosignersRecord Record is Not Found: %s", mainChainTxHash))
+	}
+	unpegBytes := ctx.KVStore(k.storeKeyForCosign).Get([]byte(mainChainTxHash))
+	err := json.Unmarshal(unpegBytes, &cosignersRecord)
+	return cosignersRecord, err
 }
 
 // ProcessClaim processes a new claim coming in from a validator
@@ -137,6 +171,15 @@ func (k Keeper) ProcessUnpegNotCosignedClaim(ctx sdk.Context, claim types.MsgUnp
 	return k.oracleKeeper.ProcessClaim(ctx, oracleClaim)
 }
 
+func searchStringFromArray(values []string, key string) bool {
+	for _, value := range values {
+		if value == key {
+			return true
+		}
+	}
+	return false
+}
+
 // ProcessSuccessfulClaim processes a claim that has just completed successfully with consensus
 func (k Keeper) ProcessSuccessfulUnpegNotCosignedClaim(ctx sdk.Context, claim string) error {
 	oracleClaim, err := types.CreateMsgUnpegNotCosignedClaimFromOracleString(claim)
@@ -159,11 +202,27 @@ func (k Keeper) ProcessSuccessfulUnpegNotCosignedClaim(ctx sdk.Context, claim st
 	); err != nil {
 		panic(err)
 	}
-	/*
-		for _, notCosignedValidator := range oracleClaim.NotCosignedValidators {
-			k.slashingKeeper.Slash(ctx, sdk.ConsAddress(notCosignedValidator), sdk.NewDec(0), 0, 0)
+
+	cosignerRecord, err := k.GetCosignersRecord(ctx, oracleClaim.TxHash)
+	if err != nil {
+		return err
+	}
+
+	param := k.GetParams(ctx)
+
+	notCosignedValidatorAddrs := []sdk.ValAddress{}
+	for _, cosigner := range param.Cosigners {
+		if !searchStringFromArray(cosignerRecord.CosignerPublicKeys, cosigner.MainchainPublicKey) {
+			valAddress, err := sdk.ValAddressFromBech32(cosigner.ValidatorAddress)
+			if err == nil {
+				notCosignedValidatorAddrs = append(notCosignedValidatorAddrs, valAddress)
+			}
 		}
-	*/
+	}
+
+	for _, notCosignedValidator := range notCosignedValidatorAddrs {
+		k.slashingKeeper.Slash(ctx, sdk.ConsAddress(notCosignedValidator), sdk.NewDec(0), 0, 0)
+	}
 
 	return nil
 }

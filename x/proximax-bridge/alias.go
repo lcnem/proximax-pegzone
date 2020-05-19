@@ -12,7 +12,7 @@ const (
 	RouterKey         = types.RouterKey
 	StoreKey          = types.StoreKey
 	StoreKeyForPeg    = types.StoreKeyForPeg
-	StoreKeyForUnpeg  = types.StoreKeyForUnpeg
+	StoreKeyForCosign = types.StoreKeyForCosign
 	DefaultParamspace = types.DefaultParamspace
 	QuerierRoute      = types.QuerierRoute
 )
@@ -30,6 +30,7 @@ var (
 	NewMsgPegClaim                   = types.NewMsgPegClaim
 	NewMsgUnpeg                      = types.NewMsgUnpeg
 	NewMsgRecordUnpeg                = types.NewMsgRecordUnpeg
+	NewMsgNotifyCosigned             = types.NewMsgNotifyCosigned
 	NewMsgUnpegNotCosignedClaim      = types.NewMsgUnpegNotCosignedClaim
 	NewMsgRequestInvitation          = types.NewMsgRequestInvitation
 	NewMsgInvitationNotCosignedClaim = types.NewMsgMsgInvitationNotCosignedClaim
@@ -49,7 +50,10 @@ type (
 	MsgPegClaim                   = types.MsgPegClaim
 	MsgUnpeg                      = types.MsgUnpeg
 	MsgRecordUnpeg                = types.MsgRecordUnpeg
+	MsgNotifyCosigned             = types.MsgNotifyCosigned
 	MsgUnpegNotCosignedClaim      = types.MsgUnpegNotCosignedClaim
 	MsgRequestInvitation          = types.MsgRequestInvitation
 	MsgInvitationNotCosignedClaim = types.MsgInvitationNotCosignedClaim
+
+	Cosigner = types.Cosigner
 )

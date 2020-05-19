@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 )
 
@@ -18,6 +17,7 @@ var (
 	// TODO: Define your keys for the parameter store
 	// KeyParamName          = []byte("ParamName")
 	KeyMainchainMultisigAddress = []byte("MainchainMultisigAddress")
+	KeyCosigners                = []byte("Cosigners")
 )
 
 // ParamKeyTable for proximax-bridge module
@@ -29,18 +29,17 @@ func ParamKeyTable() params.KeyTable {
 type Params struct {
 	// TODO: Add your Paramaters to the Paramter struct
 	// KeyParamName string `json:"key_param_name"`
-	MainchainMultisigAddress string     `json:"mainchain_multisig_address"`
+	MainchainMultisigAddress string     `json:"mainchain_address"`
 	Cosigners                []Cosigner `json:"cosigners"`
 }
 
 type Cosigner struct {
-	ValidatorAddress sdk.ValAddress `json:"validator_address"`
-	MainchainAddress string         `json:"mainchain_address"`
+	ValidatorAddress   string `json:"validator_address"`
+	MainchainPublicKey string `json:"mainchain_public_key"`
 }
 
 // NewParams creates a new Params object
 func NewParams(mainchainMultisigAddress string, cosigners []Cosigner) Params {
-
 	return Params{
 		// TODO: Create your Params Type
 		MainchainMultisigAddress: mainchainMultisigAddress,
@@ -63,6 +62,7 @@ func (p *Params) ParamSetPairs() params.ParamSetPairs {
 		// TODO: Pair your key with the param
 		// params.NewParamSetPair(KeyParamName, &p.ParamName),
 		params.NewParamSetPair(KeyMainchainMultisigAddress, &p.MainchainMultisigAddress, func(value interface{}) error { return nil }),
+		params.NewParamSetPair(KeyCosigners, &p.Cosigners, func(value interface{}) error { return nil }),
 	}
 }
 
