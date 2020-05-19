@@ -155,7 +155,9 @@ func NewInitApp(
 		bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, params.StoreKey, evidence.StoreKey, upgrade.StoreKey,
-		oracle.StoreKey, bridge.StoreKey,
+		oracle.StoreKey,
+
+		bridge.StoreKey, bridge.StoreKeyForPeg, bridge.StoreKeyForUnpeg,
 	)
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -280,7 +282,7 @@ func NewInitApp(
 
 	// TODO: Add your module(s) keepers
 	app.oracleKeeper = oracle.NewKeeper(app.cdc, keys[oracle.StoreKey], app.stakingKeeper, oracle.DefaultConsensusNeeded)
-	app.bridgeKeeper = bridge.NewKeeper(app.cdc, keys[bridge.StoreKey], app.subspaces[bridge.ModuleName], app.supplyKeeper, app.slashingKeeper, app.oracleKeeper)
+	app.bridgeKeeper = bridge.NewKeeper(app.cdc, keys[bridge.StoreKey], keys[bridge.StoreKeyForPeg], keys[bridge.StoreKeyForUnpeg], app.subspaces[bridge.ModuleName], app.supplyKeeper, app.slashingKeeper, app.oracleKeeper)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
