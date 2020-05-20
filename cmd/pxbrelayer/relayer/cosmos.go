@@ -142,7 +142,7 @@ func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
 		sub.Logger.Error("Transaction is not confirmed", "group", status.Group)
 		return
 	}
-	err = txs.RelayPeg(sub.Cdc, sub.RpcUrl, sub.ChainId, cosmosMsg, sub.ValidatorMonkier)
+	err = txs.RelayPeg(sub.Cdc, sub.RpcUrl, sub.ChainId, cosmosMsg, sub.ValidatorMonkier, sub.ValidatorAddress)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
 	}

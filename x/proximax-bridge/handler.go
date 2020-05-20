@@ -62,10 +62,9 @@ func handleMsgPeg(
 		),
 		sdk.NewEvent(
 			types.EventTypePeg,
+			sdk.NewAttribute(types.AttributeKeyCosmosReceiver, msg.Address.String()),
 			sdk.NewAttribute(types.AttributeKeyMainchainTxHash, msg.MainchainTxHash),
-			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
-			sdk.NewAttribute(types.AttributeKeyCosmosReceiver, msg.ToAddress.String()),
 		),
 	})
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
@@ -97,8 +96,6 @@ func handleMsgPegClaim(
 			types.EventTypeCreateClaim,
 			sdk.NewAttribute(types.AttributeKeyMainchainTxHash, msg.MainchainTxHash),
 			sdk.NewAttribute(types.AttributeKeyCosmosReceiver, msg.Address.String()),
-			// sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount),
-			// sdk.NewAttribute(types.AttributeKeyClaimType, msg.ClaimType.String()),
 		),
 		sdk.NewEvent(
 			types.EventTypeProphecyStatus,

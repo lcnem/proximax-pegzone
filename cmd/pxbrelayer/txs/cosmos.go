@@ -16,12 +16,13 @@ func RelayPeg(
 	chainID string,
 	claim *types.MsgPeg,
 	moniker string,
+	validatorAddress sdk.ValAddress,
 ) error {
-	msg := types.NewMsgPegClaim(sdk.ValAddress(claim.Address), claim.MainchainTxHash, claim.ToAddress, claim.Amount)
+	msg := types.NewMsgPegClaim(claim.Address, claim.MainchainTxHash, claim.Amount, validatorAddress)
 
 	cliCtx := sdkContext.NewCLIContext().
 		WithCodec(cdc).
-		WithFromAddress(sdk.AccAddress(msg.Address))
+		WithFromAddress(sdk.AccAddress(validatorAddress))
 	if rpcURL != "" {
 		cliCtx = cliCtx.WithNodeURI(rpcURL)
 	}
@@ -33,7 +34,7 @@ func RelayPeg(
 
 	// Check if destination account exists
 	accountRetriever := authtypes.NewAccountRetriever(cliCtx)
-	err := accountRetriever.EnsureExists(msg.ToAddress)
+	err := accountRetriever.EnsureExists(msg.Address)
 	if err != nil {
 		return err
 	}

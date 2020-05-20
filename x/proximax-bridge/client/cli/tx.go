@@ -41,9 +41,9 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdPeg(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "peg [key_or_address] [mainchain_tx_hash] [to_address] [amount]",
+		Use:   "peg [key_or_address] [mainchain_tx_hash] [amount]",
 		Short: "Peg",
-		Args:  cobra.ExactArgs(4), // Does your request require arguments
+		Args:  cobra.ExactArgs(3), // Does your request require arguments
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
@@ -59,17 +59,12 @@ func GetCmdPeg(cdc *codec.Codec) *cobra.Command {
 				return errors.New(fmt.Sprintf("invalid [mainchain_tx_hash]: %s", mainchainTxHash))
 			}
 
-			toAddress, err := sdk.AccAddressFromBech32(args[2])
+			coins, err := sdk.ParseCoins(args[2])
 			if err != nil {
 				return err
 			}
 
-			coins, err := sdk.ParseCoins(args[3])
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewMsgPeg(cosmosSender, mainchainTxHash, toAddress, coins)
+			msg := types.NewMsgPeg(cosmosSender, mainchainTxHash, coins)
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

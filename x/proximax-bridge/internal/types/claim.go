@@ -16,7 +16,7 @@ func CreateOracleClaimFromMsgPegClaim(cdc *codec.Codec, msg MsgPegClaim) (oracle
 		return oracle.Claim{}, err
 	}
 	claimString := string(claimBytes)
-	claim := oracle.NewClaim(oracleID, msg.Address, claimString)
+	claim := oracle.NewClaim(oracleID, msg.ValidatorAddress, claimString)
 	return claim, nil
 }
 

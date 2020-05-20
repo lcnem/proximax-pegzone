@@ -12,16 +12,14 @@ var _ sdk.Msg = &MsgPeg{}
 type MsgPeg struct {
 	Address         sdk.AccAddress `json:"address" yaml:"address"`
 	MainchainTxHash string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
-	ToAddress       sdk.AccAddress `json:"to_address" yaml:"to_address"`
 	Amount          sdk.Coins      `json:"amount" yaml:"amount"`
 }
 
 // NewMsgUnpeg creates a new MsgUnpeg instance
-func NewMsgPeg(address sdk.AccAddress, mainchainTxHash string, toAddress sdk.AccAddress, amount sdk.Coins) MsgPeg {
+func NewMsgPeg(address sdk.AccAddress, mainchainTxHash string, amount sdk.Coins) MsgPeg {
 	return MsgPeg{
 		Address:         address,
 		MainchainTxHash: mainchainTxHash,
-		ToAddress:       toAddress,
 		Amount:          amount,
 	}
 }
@@ -57,19 +55,19 @@ var _ sdk.Msg = &MsgPegClaim{}
 
 // MsgPegClaim - struct for unjailing jailed validator
 type MsgPegClaim struct {
-	Address         sdk.ValAddress `json:"address" yaml:"address"`
-	MainchainTxHash string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
-	ToAddress       sdk.AccAddress `json:"to_address" yaml:"to_address"`
-	Amount          sdk.Coins      `json:"amount" yaml:"amount"`
+	Address          sdk.AccAddress `json:"address" yaml:"address"`
+	MainchainTxHash  string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	Amount           sdk.Coins      `json:"amount" yaml:"amount"`
+	ValidatorAddress sdk.ValAddress `json:"validator_address" yaml:"validator_address"`
 }
 
 // NewMsgPegClaim creates a new MsgPegClaim instance
-func NewMsgPegClaim(address sdk.ValAddress, mainchainTxHash string, toAddress sdk.AccAddress, amount sdk.Coins) MsgPegClaim {
+func NewMsgPegClaim(address sdk.AccAddress, mainchainTxHash string, amount sdk.Coins, validatorAddress sdk.ValAddress) MsgPegClaim {
 	return MsgPegClaim{
-		Address:         address,
-		MainchainTxHash: mainchainTxHash,
-		ToAddress:       toAddress,
-		Amount:          amount,
+		Address:          address,
+		MainchainTxHash:  mainchainTxHash,
+		Amount:           amount,
+		ValidatorAddress: validatorAddress,
 	}
 }
 
@@ -79,7 +77,7 @@ const pegClaimConst = "peg_claim"
 func (msg MsgPegClaim) Route() string { return RouterKey }
 func (msg MsgPegClaim) Type() string  { return pegClaimConst }
 func (msg MsgPegClaim) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+	return []sdk.AccAddress{sdk.AccAddress(msg.ValidatorAddress)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
