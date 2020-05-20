@@ -11,6 +11,8 @@ const (
 
 	StoreKeyForCosign = ModuleName + "_cosign"
 
+	StoreKeyForInvite = ModuleName + "_invite"
+
 	// RouterKey to be used for routing msgs
 	RouterKey = ModuleName
 

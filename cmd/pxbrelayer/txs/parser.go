@@ -83,7 +83,7 @@ func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 	return &cosmosMsg, nil
 }
 
-func RequestInvitationEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgRequestInvitation, error) {
+func RequestInvitationEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgRequestInvitation, string, error) {
 	var address sdk.ValAddress
 	var multisigAccountPublicKey string
 	var newCosignerPublicKey string
@@ -94,7 +94,7 @@ func RequestInvitationEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgReq
 		key := string(attribute.GetKey())
 		val := string(attribute.GetValue())
 		switch key {
-		case "cosmos_sender":
+		case "cosmos_account":
 			address, err = sdk.ValAddressFromBech32(val)
 			if err != nil {
 				break
@@ -114,8 +114,8 @@ func RequestInvitationEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgReq
 		}
 	}
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	cosmosMsg := msgTypes.NewMsgRequestInvitation(address, multisigAccountPublicKey, newCosignerPublicKey, firstCosignerAddress)
-	return &cosmosMsg, nil
+	cosmosMsg := msgTypes.NewMsgRequestInvitation(address, newCosignerPublicKey, firstCosignerAddress)
+	return &cosmosMsg, multisigAccountPublicKey, nil
 }

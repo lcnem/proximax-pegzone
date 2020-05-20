@@ -231,39 +231,39 @@ func (msg MsgNotifyCosigned) ValidateBasic() error {
 
 // TODO: Describe your actions, these will implment the interface of `sdk.Msg`
 // verify interface at compile time
-var _ sdk.Msg = &MsgUnpegNotCosignedClaim{}
+var _ sdk.Msg = &MsgNotCosignedClaim{}
 
-// MsgUnpegNotCosignedClaim - struct for unjailing jailed validator
-type MsgUnpegNotCosignedClaim struct {
+// MsgNotCosignedClaim - struct for unjailing jailed validator
+type MsgNotCosignedClaim struct {
 	Address sdk.ValAddress `json:"address" yaml:"address"`
 	TxHash  string         `json:"tx_hash" yaml:"tx_hash"`
 }
 
-// NewMsgUnpegNotCosignedClaim creates a new MsgUnpegNotCosignedClaim instance
-func NewMsgUnpegNotCosignedClaim(address sdk.ValAddress, txHash string) MsgUnpegNotCosignedClaim {
-	return MsgUnpegNotCosignedClaim{
+// NewMsgNotCosignedClaim creates a new MsgNotCosignedClaim instance
+func NewMsgNotCosignedClaim(address sdk.ValAddress, txHash string) MsgNotCosignedClaim {
+	return MsgNotCosignedClaim{
 		Address: address,
 		TxHash:  txHash,
 	}
 }
 
-const unpegNotCosignedClaimConst = "unpeg_not_cosigned_claim"
+const notCosignedClaimConst = "not_cosigned_claim"
 
 // nolint
-func (msg MsgUnpegNotCosignedClaim) Route() string { return RouterKey }
-func (msg MsgUnpegNotCosignedClaim) Type() string  { return unpegNotCosignedClaimConst }
-func (msg MsgUnpegNotCosignedClaim) GetSigners() []sdk.AccAddress {
+func (msg MsgNotCosignedClaim) Route() string { return RouterKey }
+func (msg MsgNotCosignedClaim) Type() string  { return notCosignedClaimConst }
+func (msg MsgNotCosignedClaim) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
-func (msg MsgUnpegNotCosignedClaim) GetSignBytes() []byte {
+func (msg MsgNotCosignedClaim) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic validity check for the AnteHandler
-func (msg MsgUnpegNotCosignedClaim) ValidateBasic() error {
+func (msg MsgNotCosignedClaim) ValidateBasic() error {
 	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}
@@ -277,19 +277,17 @@ var _ sdk.Msg = &MsgRequestInvitation{}
 
 // MsgRequestInvitation - struct for unjailing jailed validator
 type MsgRequestInvitation struct {
-	Address                sdk.ValAddress `json:"address" yaml:"address"`
-	MultisigAccountAddress string         `json:"multisig_account_address" yaml:"multisig_account_address"`
-	NewCosignerPublicKey   string         `json:"new_cosigner_public_key" yaml:"new_cosigner_public_key"`
-	FirstCosignerAddress   sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
+	Address              sdk.ValAddress `json:"address" yaml:"address"`
+	NewCosignerPublicKey string         `json:"new_cosigner_public_key" yaml:"new_cosigner_public_key"`
+	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 // NewMsgRequestInvitation creates a new MsgRequestInvitation instance
-func NewMsgRequestInvitation(address sdk.ValAddress, multisigAccountAddress, newCosignerPublicKey string, firstCosignerAddress sdk.ValAddress) MsgRequestInvitation {
+func NewMsgRequestInvitation(address sdk.ValAddress, newCosignerPublicKey string, firstCosignerAddress sdk.ValAddress) MsgRequestInvitation {
 	return MsgRequestInvitation{
-		Address:                address,
-		MultisigAccountAddress: multisigAccountAddress,
-		NewCosignerPublicKey:   newCosignerPublicKey,
-		FirstCosignerAddress:   firstCosignerAddress,
+		Address:              address,
+		NewCosignerPublicKey: newCosignerPublicKey,
+		FirstCosignerAddress: firstCosignerAddress,
 	}
 }
 
@@ -316,44 +314,126 @@ func (msg MsgRequestInvitation) ValidateBasic() error {
 	return nil
 }
 
-// TODO: Describe your actions, these will implment the interface of `sdk.Msg`
+var _ sdk.Msg = &MsgPendingRequestInvitation{}
 
-// verify interface at compile time
-var _ sdk.Msg = &MsgInvitationNotCosignedClaim{}
-
-// MsgInvitationNotCosignedClaim - struct for unjailing jailed validator
-type MsgInvitationNotCosignedClaim struct {
-	Address               sdk.ValAddress `json:"address" yaml:"address"`
-	TxHash                string         `json:"tx_hash" yaml:"tx_hash"`
-	NotCosignedValidators []string       `json:"not_cosigned_validators" yaml:"not_cosigned_validators"`
+// MsgRequestInvitation - struct for unjailing jailed validator
+type MsgPendingRequestInvitation struct {
+	Address                sdk.ValAddress `json:"address" yaml:"address"`
+	NewCosignerPublicKey   string         `json:"new_cosigner_public_key" yaml:"new_cosigner_public_key"`
+	FirstCosignerAddress   sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
+	FirstCosignerPublicKey string         `json:"first_cosigner_public_key" yaml:"first_cosigner_public_key"`
+	TxHash                 string         `json:"tx_hash" yaml:"tx_hash"`
 }
 
-// NewMsgMsgInvitationNotCosignedClaim creates a new MsgMsgInvitationNotCosignedClaim instance
-func NewMsgMsgInvitationNotCosignedClaim(address sdk.ValAddress, txHash string, notCosignedValidators []string) MsgInvitationNotCosignedClaim {
-	return MsgInvitationNotCosignedClaim{
-		Address:               address,
-		TxHash:                txHash,
-		NotCosignedValidators: notCosignedValidators,
+// NewMsgRequestInvitation creates a new MsgRequestInvitation instance
+func NewMsgPendingRequestInvitation(address sdk.ValAddress, newCosignerPublicKey string, firstCosignerAddress sdk.ValAddress, firstCosignerPublicKey, txHash string) MsgPendingRequestInvitation {
+	return MsgPendingRequestInvitation{
+		Address:                address,
+		NewCosignerPublicKey:   newCosignerPublicKey,
+		FirstCosignerAddress:   firstCosignerAddress,
+		FirstCosignerPublicKey: firstCosignerPublicKey,
+		TxHash:                 txHash,
 	}
 }
 
-const invitationNotCosignedClaimConst = "invitation_not_cosigned_claim"
+const pendingRequestInvitationConst = "pending_request_invitation"
 
 // nolint
-func (msg MsgInvitationNotCosignedClaim) Route() string { return RouterKey }
-func (msg MsgInvitationNotCosignedClaim) Type() string  { return invitationNotCosignedClaimConst }
-func (msg MsgInvitationNotCosignedClaim) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+func (msg MsgPendingRequestInvitation) Route() string { return RouterKey }
+func (msg MsgPendingRequestInvitation) Type() string  { return pendingRequestInvitationConst }
+func (msg MsgPendingRequestInvitation) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{sdk.AccAddress(msg.FirstCosignerAddress)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
-func (msg MsgInvitationNotCosignedClaim) GetSignBytes() []byte {
+func (msg MsgPendingRequestInvitation) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic validity check for the AnteHandler
-func (msg MsgInvitationNotCosignedClaim) ValidateBasic() error {
+func (msg MsgPendingRequestInvitation) ValidateBasic() error {
+	if msg.Address.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
+	}
+	return nil
+}
+
+var _ sdk.Msg = &MsgNewCosignerInvited{}
+
+// MsgProximaXTransactionStatus - struct for unjailing jailed validator
+type MsgNewCosignerInvited struct {
+	Address            sdk.ValAddress `json:"address" yaml:"address"`
+	TxHash             string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	MainchainPublicKey string         `json:"mainchain_public_key" yaml:"mainchain_public_key"`
+}
+
+// NewMsgRequestInvitation creates a new MsgRequestInvitation instance
+func NewMsgNewCosignerInvited(address sdk.ValAddress, txHash, pubKey string) MsgNewCosignerInvited {
+	return MsgNewCosignerInvited{
+		Address:            address,
+		TxHash:             txHash,
+		MainchainPublicKey: pubKey,
+	}
+}
+
+const newCosignerInvitedConst = "new_cosigner_invited"
+
+// nolint
+func (msg MsgNewCosignerInvited) Route() string { return RouterKey }
+func (msg MsgNewCosignerInvited) Type() string  { return newCosignerInvitedConst }
+func (msg MsgNewCosignerInvited) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+}
+
+// GetSignBytes gets the bytes for the message signer to sign on
+func (msg MsgNewCosignerInvited) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+// ValidateBasic validity check for the AnteHandler
+func (msg MsgNewCosignerInvited) ValidateBasic() error {
+	if msg.Address.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
+	}
+	return nil
+}
+
+//hoge
+var _ sdk.Msg = &MsgConfirmedInvitation{}
+
+// MsgProximaXTransactionStatus - struct for unjailing jailed validator
+type MsgConfirmedInvitation struct {
+	Address sdk.ValAddress `json:"address" yaml:"address"`
+	TxHash  string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+}
+
+// NewMsgRequestInvitation creates a new MsgRequestInvitation instance
+func NewMsgConfirmedInvitation(address sdk.ValAddress, txHash string) MsgConfirmedInvitation {
+	return MsgConfirmedInvitation{
+		Address: address,
+		TxHash:  txHash,
+	}
+}
+
+const confirmedInvitationConst = "confirmed_invitation"
+
+// nolint
+func (msg MsgConfirmedInvitation) Route() string { return RouterKey }
+func (msg MsgConfirmedInvitation) Type() string  { return confirmedInvitationConst }
+func (msg MsgConfirmedInvitation) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+}
+
+// GetSignBytes gets the bytes for the message signer to sign on
+func (msg MsgConfirmedInvitation) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+// ValidateBasic validity check for the AnteHandler
+func (msg MsgConfirmedInvitation) ValidateBasic() error {
 	if msg.Address.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator address")
 	}

@@ -174,7 +174,7 @@ func (sub *CosmosSub) handleUnpegEvent(attributes []tmKv.Pair) {
 }
 
 func (sub *CosmosSub) handleRequestInvitationEvent(attributes []tmKv.Pair) {
-	msg, err := txs.RequestInvitationEventToCosmosMsg(attributes)
+	msg, multisigAddress, err := txs.RequestInvitationEventToCosmosMsg(attributes)
 	if err != nil {
 		sub.Logger.Error("Failed to convert RequestInvitation event to Cosmos Message", "err", err)
 		return
@@ -182,5 +182,23 @@ func (sub *CosmosSub) handleRequestInvitationEvent(attributes []tmKv.Pair) {
 	if msg.FirstCosignerAddress.String() != sub.ValidatorAddress.String() {
 		return
 	}
-	txs.RelayInvitation(sub.ProximaXClient, sub.ProximaxPrivateKey, msg)
+	txHash, err := txs.RelayInvitation(sub.ProximaXClient, sub.ProximaxPrivateKey, msg, multisigAddress)
+	if err != nil {
+		sub.Logger.Error("Failed to broadcase ProximaX transaction to add new cosigner", "err", err)
+		return
+	}
+
+	account, err := sub.ProximaXClient.NewAccountFromPrivateKey(sub.ProximaxPrivateKey)
+	if err != nil {
+		sub.Logger.Error("Failed to Get Account", "err", err)
+		return
+	}
+	pubKey := account.PublicAccount.PublicKey
+
+	pendingMsg := msgTypes.NewMsgPendingRequestInvitation(msg.Address, msg.NewCosignerPublicKey, msg.FirstCosignerAddress, pubKey, txHash)
+	err = txs.RelayPendingRequestInvitation(sub.Cdc, sub.RpcUrl, sub.ChainId, &pendingMsg, sub.ValidatorMonkier)
+	if err != nil {
+		sub.Logger.Error("Failed to broadcase Cosmos transaction to notify pending request", "err", err)
+		return
+	}
 }

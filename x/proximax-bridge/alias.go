@@ -13,6 +13,7 @@ const (
 	StoreKey          = types.StoreKey
 	StoreKeyForPeg    = types.StoreKeyForPeg
 	StoreKeyForCosign = types.StoreKeyForCosign
+	StoreKeyForInvite = types.StoreKeyForInvite
 	DefaultParamspace = types.DefaultParamspace
 	QuerierRoute      = types.QuerierRoute
 )
@@ -26,14 +27,15 @@ var (
 	DefaultGenesisState = types.DefaultGenesisState
 	ValidateGenesis     = types.ValidateGenesis
 	// TODO: Fill out function aliases
-	NewMsgPeg                        = types.NewMsgPeg
-	NewMsgPegClaim                   = types.NewMsgPegClaim
-	NewMsgUnpeg                      = types.NewMsgUnpeg
-	NewMsgRecordUnpeg                = types.NewMsgRecordUnpeg
-	NewMsgNotifyCosigned             = types.NewMsgNotifyCosigned
-	NewMsgUnpegNotCosignedClaim      = types.NewMsgUnpegNotCosignedClaim
-	NewMsgRequestInvitation          = types.NewMsgRequestInvitation
-	NewMsgInvitationNotCosignedClaim = types.NewMsgMsgInvitationNotCosignedClaim
+	NewMsgPeg                      = types.NewMsgPeg
+	NewMsgPegClaim                 = types.NewMsgPegClaim
+	NewMsgUnpeg                    = types.NewMsgUnpeg
+	NewMsgRecordUnpeg              = types.NewMsgRecordUnpeg
+	NewMsgNotifyCosigned           = types.NewMsgNotifyCosigned
+	NewMsgNotCosignedClaim         = types.NewMsgNotCosignedClaim
+	NewMsgRequestInvitation        = types.NewMsgRequestInvitation
+	NewMsgPendingRequestInvitation = types.NewMsgPendingRequestInvitation
+	NewMsgConfirmedInvitation      = types.NewMsgConfirmedInvitation
 
 	// variable aliases
 	ModuleCdc = types.ModuleCdc
@@ -46,14 +48,15 @@ type (
 	Params       = types.Params
 
 	// TODO: Fill out module types
-	MsgPeg                        = types.MsgPeg
-	MsgPegClaim                   = types.MsgPegClaim
-	MsgUnpeg                      = types.MsgUnpeg
-	MsgRecordUnpeg                = types.MsgRecordUnpeg
-	MsgNotifyCosigned             = types.MsgNotifyCosigned
-	MsgUnpegNotCosignedClaim      = types.MsgUnpegNotCosignedClaim
-	MsgRequestInvitation          = types.MsgRequestInvitation
-	MsgInvitationNotCosignedClaim = types.MsgInvitationNotCosignedClaim
+	MsgPeg                      = types.MsgPeg
+	MsgPegClaim                 = types.MsgPegClaim
+	MsgUnpeg                    = types.MsgUnpeg
+	MsgRecordUnpeg              = types.MsgRecordUnpeg
+	MsgNotifyCosigned           = types.MsgNotifyCosigned
+	MsgNotCosignedClaim         = types.MsgNotCosignedClaim
+	MsgRequestInvitation        = types.MsgRequestInvitation
+	MsgPendingRequestInvitation = types.MsgPendingRequestInvitation
+	MsgConfirmedInvitation      = types.MsgConfirmedInvitation
 
 	Cosigner = types.Cosigner
 )

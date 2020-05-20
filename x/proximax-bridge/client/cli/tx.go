@@ -120,20 +120,25 @@ func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdRequestInvitation(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "request-invitation [from_key_or_address] [multisig_account_address] [new_cosigner_public_key] [first_cosigner_address]",
+		Use:   "request-invitation [from_key_or_address] [new_cosigner_public_key] [first_cosigner_address]",
 		Short: "Request invitation for multisig cosigner",
-		Args:  cobra.ExactArgs(4), // Does your request require arguments
+		Args:  cobra.ExactArgs(3), // Does your request require arguments
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			firstCosignerAddress, err := sdk.ValAddressFromBech32(args[3])
+			newCosignerPublicKey := args[1]
+			if len(strings.Trim(newCosignerPublicKey, "")) == 0 {
+				return errors.New(fmt.Sprintf("invalid [new_cosigner_public_key]: %s", newCosignerPublicKey))
+			}
+
+			firstCosignerAddress, err := sdk.ValAddressFromBech32(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgRequestInvitation(sdk.ValAddress(cliCtx.FromAddress), args[1], args[2], firstCosignerAddress)
+			msg := types.NewMsgRequestInvitation(sdk.ValAddress(cliCtx.FromAddress), newCosignerPublicKey, firstCosignerAddress)
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

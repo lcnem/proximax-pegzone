@@ -115,12 +115,12 @@ func RelayRecordUnpeg(
 	return nil
 }
 
-func RelayUnpegNotCosigned(
+func RelayNotCosigned(
 	cdc *codec.Codec,
 	cli sdkContext.CLIContext,
 	rpcURL string,
 	chainID string,
-	msg types.MsgUnpegNotCosignedClaim,
+	msg types.MsgNotCosignedClaim,
 	validatorMoniker string,
 ) error {
 
@@ -203,18 +203,76 @@ func RelayNotifyCosigned(
 	return nil
 }
 
-func RelayInvitationNotCosigned(
+func RelayPendingRequestInvitation(
 	cdc *codec.Codec,
 	rpcURL string,
 	chainID string,
-	msg *types.MsgInvitationNotCosignedClaim,
+	msg *types.MsgPendingRequestInvitation,
 	moniker string,
 ) error {
-	cliCtx := sdkContext.NewCLIContext()
+
+	cliCtx := sdkContext.NewCLIContext().
+		WithCodec(cdc).
+		WithFromAddress(sdk.AccAddress(msg.FirstCosignerAddress))
 	if rpcURL != "" {
 		cliCtx = cliCtx.WithNodeURI(rpcURL)
 	}
 	cliCtx.SkipConfirm = true
+
+	txBldr := authtypes.NewTxBuilderFromCLI(nil).
+		WithTxEncoder(utils.GetTxEncoder(cdc)).
+		WithChainID(chainID)
+
+	// Check if destination account exists
+	accountRetriever := authtypes.NewAccountRetriever(cliCtx)
+	err := accountRetriever.EnsureExists(sdk.AccAddress(msg.Address))
+	if err != nil {
+		return err
+	}
+
+	// Validate message
+	err = msg.ValidateBasic()
+	if err != nil {
+		return err
+	}
+
+	// Prepare tx
+	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
+	if err != nil {
+		return err
+	}
+
+	// Build and sign the transaction
+	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to a Tendermint node
+	res, err := cliCtx.BroadcastTxSync(txBytes)
+	if err != nil {
+		return err
+	}
+
+	if err = cliCtx.PrintOutput(res); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RelayConfirmedInvitation(
+	cdc *codec.Codec,
+	cli sdkContext.CLIContext,
+	rpcURL string,
+	chainID string,
+	msg types.MsgConfirmedInvitation,
+	validatorMoniker string,
+) error {
+
+	if rpcURL != "" {
+		cli = cli.WithNodeURI(rpcURL)
+	}
+	cli.SkipConfirm = true
 
 	txBldr := authtypes.NewTxBuilderFromCLI(nil).
 		WithTxEncoder(utils.GetTxEncoder(cdc)).
@@ -225,22 +283,22 @@ func RelayInvitationNotCosigned(
 		return err
 	}
 
-	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
+	txBldr, err = utils.PrepareTxBuilder(txBldr, cli)
 	if err != nil {
 		return err
 	}
 
-	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
+	txBytes, err := txBldr.BuildAndSign(validatorMoniker, keys.DefaultKeyPass, []sdk.Msg{msg})
 	if err != nil {
 		return err
 	}
 
-	res, err := cliCtx.BroadcastTxSync(txBytes)
+	res, err := cli.BroadcastTxSync(txBytes)
 	if err != nil {
 		return err
 	}
 
-	if err = cliCtx.PrintOutput(res); err != nil {
+	if err = cli.PrintOutput(res); err != nil {
 		return err
 	}
 	return nil
