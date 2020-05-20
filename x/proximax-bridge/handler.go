@@ -123,7 +123,6 @@ func handleMsgUnpeg(
 		sdk.NewEvent(
 			types.EventTypeUnpeg,
 			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
-			sdk.NewAttribute(types.AttributeKeyCosmosAccount, msg.FromAddress.String()),
 			sdk.NewAttribute(types.AttributeKeyMainchainAddress, msg.MainchainAddress),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyFirstCosignerAddress, msg.FirstCosignerAddress.String()),
@@ -134,7 +133,7 @@ func handleMsgUnpeg(
 }
 
 func handleMsgRecordUnpeg(ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgRecordUnpeg) (*sdk.Result, error) {
-	bridgeKeeper.SetUnpegRecord(ctx, msg.MainchainTxHash, msg.FromAddress, msg.Amount)
+	bridgeKeeper.SetUnpegRecord(ctx, msg.MainchainTxHash, msg.Address, msg.Amount)
 	bridgeKeeper.SetCosigners(ctx, msg.MainchainTxHash, msg.FirstCosignerPublicKey)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

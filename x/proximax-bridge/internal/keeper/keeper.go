@@ -147,7 +147,7 @@ func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 
 func (k Keeper) ProcessUnpeg(ctx sdk.Context, msg types.MsgUnpeg) error {
 	if err := k.supplyKeeper.SendCoinsFromAccountToModule(
-		ctx, msg.FromAddress, types.ModuleName, msg.Amount,
+		ctx, msg.Address, types.ModuleName, msg.Amount,
 	); err != nil {
 		return err
 	}

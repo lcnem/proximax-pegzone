@@ -77,32 +77,35 @@ func GetCmdPeg(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "unpeg [key_or_address] [from_address] [mainchain_address] [amount] [first_cosigner_address]",
+		Use:   "unpeg [key_or_address] [mainchain_address] [amount] [first_cosigner_address]",
 		Short: "Unpeg",
-		Args:  cobra.ExactArgs(5), // Does your request require arguments
+		Args:  cobra.ExactArgs(4), // Does your request require arguments
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			fromAddress, err := sdk.AccAddressFromBech32(args[1])
+			cosmosSender, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return err
 			}
 
-			mainChainAddress := args[2]
+			mainChainAddress := args[1]
+			if len(strings.Trim(mainChainAddress, "")) == 0 {
+				return errors.New(fmt.Sprintf("invalid [mainchain_address]: %s", mainChainAddress))
+			}
 
-			amount, err := sdk.ParseCoins(args[3])
+			amount, err := sdk.ParseCoins(args[2])
 			if err != nil {
 				return err
 			}
 
-			firstCosignerAddress, err := sdk.ValAddressFromBech32(args[4])
+			firstCosignerAddress, err := sdk.ValAddressFromBech32(args[3])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgUnpeg(cliCtx.GetFromAddress(), fromAddress, mainChainAddress, amount, firstCosignerAddress)
+			msg := types.NewMsgUnpeg(cosmosSender, mainChainAddress, amount, firstCosignerAddress)
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

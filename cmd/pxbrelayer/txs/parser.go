@@ -37,7 +37,6 @@ func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
 
 func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 	var address sdk.AccAddress
-	var cosmosAccount sdk.AccAddress
 	var mainchainAddress string
 	var amount sdk.Coins
 	var firstCosignerAddress sdk.ValAddress
@@ -49,12 +48,6 @@ func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 		switch key {
 		case "cosmos_sender":
 			address, err = sdk.AccAddressFromBech32(val)
-			if err != nil {
-				return nil, err
-			}
-			break
-		case "cosmos_account":
-			cosmosAccount, err = sdk.AccAddressFromBech32(val)
 			if err != nil {
 				return nil, err
 			}
@@ -75,7 +68,7 @@ func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 			}
 		}
 	}
-	cosmosMsg := msgTypes.NewMsgUnpeg(address, cosmosAccount, mainchainAddress, amount, firstCosignerAddress)
+	cosmosMsg := msgTypes.NewMsgUnpeg(address, mainchainAddress, amount, firstCosignerAddress)
 	return &cosmosMsg, nil
 }
 

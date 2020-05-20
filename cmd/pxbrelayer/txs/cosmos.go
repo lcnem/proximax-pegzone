@@ -75,11 +75,10 @@ func RelayRecordUnpeg(
 	chainID string,
 	msg *types.MsgRecordUnpeg,
 	moniker string,
-	validatorAddress sdk.ValAddress,
 ) error {
 	cliCtx := sdkContext.NewCLIContext().
 		WithCodec(cdc).
-		WithFromAddress(msg.Address)
+		WithFromAddress(sdk.AccAddress(msg.ValidatorAddress))
 
 	if rpcURL != "" {
 		cliCtx = cliCtx.WithNodeURI(rpcURL)
