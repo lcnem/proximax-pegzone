@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 

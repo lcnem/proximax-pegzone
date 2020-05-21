@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/types"
 )
 
 func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {

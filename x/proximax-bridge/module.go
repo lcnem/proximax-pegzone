@@ -18,7 +18,7 @@ import (
 	"github.com/cosmos/peggy/x/oracle"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/client/cli"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/client/rest"
-	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/types"
 )
 
 var (

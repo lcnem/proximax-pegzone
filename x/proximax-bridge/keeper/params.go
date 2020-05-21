@@ -4,7 +4,7 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/types"
 )
 
 // GetParams returns the total set of proximax-bridge parameters.

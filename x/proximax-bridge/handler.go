@@ -9,7 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/peggy/x/oracle"
-	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/types"
 )
 
 // NewHandler creates an sdk.Handler for all the proximax-bridge type messages

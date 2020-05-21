@@ -1,8 +1,8 @@
 package proximax_bridge
 
 import (
-	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/keeper"
-	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/internal/types"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/keeper"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/types"
 )
 
 const (
