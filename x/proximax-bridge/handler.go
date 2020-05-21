@@ -16,6 +16,7 @@ import (
 func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
 		// TODO: Define your msg cases
 		//
@@ -30,15 +31,20 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 			return handleMsgRecordUnpeg(ctx, cdc, bridgeKeeper, msg)
 		case MsgNotifyCosigned:
 			return handleMsgNotifyCosigned(ctx, cdc, bridgeKeeper, msg)
-		case MsgUnpegNotCosignedClaim:
-			return handleMsgUnpegNotCosignedClaim(ctx, cdc, accountKeeper, bridgeKeeper, msg)
 		case MsgRequestInvitation:
-			return handleMsgRequestInvitation(ctx, cdc, msg)
+			return handleMsgRequestInvitation(ctx, cdc, bridgeKeeper, msg)
+		case MsgPendingRequestInvitation:
+			return handleMsgPendingRequestInvitation(ctx, cdc, bridgeKeeper, msg)
+		case MsgConfirmedInvitation:
+			return handleMsgConfirmedInvitation(ctx, cdc, bridgeKeeper, msg)
+		case MsgNotCosignedClaim:
+			return handleMsgNotCosignedClaim(ctx, cdc, accountKeeper, bridgeKeeper, msg)
 
 		//Example:
 		// case MsgSet<Action>:
 		// 	return handleMsg<Action>(ctx, keeper, msg)
 		default:
+			fmt.Printf("Msg10: %+v %s\n", msg, msg.Type())
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
@@ -143,16 +149,73 @@ func handleMsgNotifyCosigned(ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Kee
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgUnpegNotCosignedClaim(
-	ctx sdk.Context, cdc *codec.Codec, accountKeeper auth.AccountKeeper,
-	bridgeKeeper Keeper, msg MsgUnpegNotCosignedClaim,
+func handleMsgRequestInvitation(
+	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgRequestInvitation,
 ) (*sdk.Result, error) {
-	status, err := bridgeKeeper.ProcessUnpegNotCosignedClaim(ctx, msg)
+	param := bridgeKeeper.GetParams(ctx)
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
+		),
+		sdk.NewEvent(
+			types.EventTypeInvitation,
+			sdk.NewAttribute(types.AttributeKeyCosmosAccount, msg.Address.String()),
+			sdk.NewAttribute(types.AttributeKeyMultisigAccountAddress, param.MainchainMultisigAddress),
+			sdk.NewAttribute(types.AttributeKeyNewCosignerPublicKey, msg.NewCosignerPublicKey),
+			sdk.NewAttribute(types.AttributeKeyFirstCosignerAddress, msg.FirstCosignerAddress.String()),
+		),
+	})
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgPendingRequestInvitation(
+	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgPendingRequestInvitation,
+) (*sdk.Result, error) {
+	fmt.Printf("handleMsgPendingRequestInvitation %+v\n", msg)
+	bridgeKeeper.SetPendingInviteRequest(ctx, msg.TxHash, msg.Address, msg.NewCosignerPublicKey)
+	bridgeKeeper.SetCosigners(ctx, msg.TxHash, msg.FirstCosignerPublicKey)
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
+		),
+	})
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgConfirmedInvitation(
+	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgConfirmedInvitation,
+) (*sdk.Result, error) {
+	request, err := bridgeKeeper.GetPendingRequest(ctx, msg.TxHash)
+	if err != nil {
+		bridgeKeeper.AddNewCosigner(ctx, request.Address, request.MainchainPublicKey)
+	}
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
+		),
+	})
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgNotCosignedClaim(
+	ctx sdk.Context, cdc *codec.Codec, accountKeeper auth.AccountKeeper,
+	bridgeKeeper Keeper, msg MsgNotCosignedClaim,
+) (*sdk.Result, error) {
+	status, err := bridgeKeeper.ProcessNotCosignedClaim(ctx, msg)
 	if err != nil {
 		return nil, err
 	}
 	if status.Text == oracle.SuccessStatusText {
-		if err := bridgeKeeper.ProcessSuccessfulUnpegNotCosignedClaim(ctx, status.FinalClaim); err != nil {
+		if err := bridgeKeeper.ProcessSuccessfulNotCosignedClaim(ctx, status.FinalClaim); err != nil {
 			return nil, err
 		}
 	}
@@ -167,24 +230,4 @@ func handleMsgUnpegNotCosignedClaim(
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 
-}
-
-func handleMsgRequestInvitation(
-	ctx sdk.Context, cdc *codec.Codec, msg MsgRequestInvitation,
-) (*sdk.Result, error) {
-	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Address.String()),
-		),
-		sdk.NewEvent(
-			types.EventTypeInvitation,
-			sdk.NewAttribute(types.AttributeKeyCosmosSender, msg.Address.String()),
-			sdk.NewAttribute(types.AttributeKeyMultisigAccountAddress, msg.MultisigAccountAddress),
-			sdk.NewAttribute(types.AttributeKeyNewCosignerPublicKey, msg.NewCosignerPublicKey),
-			sdk.NewAttribute(types.AttributeKeyFirstCosignerAddress, msg.FirstCosignerAddress.String()),
-		),
-	})
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

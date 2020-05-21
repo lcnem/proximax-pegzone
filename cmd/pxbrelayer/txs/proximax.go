@@ -101,23 +101,23 @@ func RelayUnpeg(client *sdk.Client, firstCosignatoryPrivateKey, multisigPublicKe
 	return signedAggregateBoundedTx.Hash.String(), nil
 }
 
-func RelayInvitation(client *sdk.Client, firstCosignatoryPrivateKey string, msg *msgTypes.MsgRequestInvitation) error {
-	multisigAccount, err := getAccountByAddress(client, msg.MultisigAccountAddress)
+func RelayInvitation(client *sdk.Client, firstCosignatoryPrivateKey string, msg *msgTypes.MsgRequestInvitation, multisigAccountAddress string) (string, error) {
+	multisigAccount, err := getAccountByAddress(client, multisigAccountAddress)
 	if err != nil {
-		return err
+		return "", err
 	}
 	firstCosignatory, err := client.NewAccountFromPrivateKey(firstCosignatoryPrivateKey)
 	if err != nil {
-		return err
+		return "", err
 	}
 	newCosignerAccount, err := client.NewAccountFromPublicKey(msg.NewCosignerPublicKey)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	multisigAccountInfo, err := client.Account.GetMultisigAccountInfo(context.Background(), multisigAccount.Address)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Update majority
@@ -131,7 +131,7 @@ func RelayInvitation(client *sdk.Client, firstCosignatoryPrivateKey string, msg 
 		[]*sdk.MultisigCosignatoryModification{{sdk.Add, newCosignerAccount}},
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
 	modifyMultisigTx.ToAggregate(multisigAccount)
 
@@ -140,12 +140,12 @@ func RelayInvitation(client *sdk.Client, firstCosignatoryPrivateKey string, msg 
 		[]sdk.Transaction{modifyMultisigTx},
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	signedAggregateBoundedTx, err := firstCosignatory.Sign(aggregateBoundedTx)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	lockFundsTx, err := client.NewLockFundsTransaction(
@@ -155,24 +155,25 @@ func RelayInvitation(client *sdk.Client, firstCosignatoryPrivateKey string, msg 
 		signedAggregateBoundedTx,
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	signedLockFundsTx, err := firstCosignatory.Sign(lockFundsTx)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	_, err = client.Transaction.Announce(context.Background(), signedLockFundsTx)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	time.Sleep(30 * time.Second)
 
 	_, _ = client.Transaction.AnnounceAggregateBonded(context.Background(), signedAggregateBoundedTx)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+
+	return signedAggregateBoundedTx.Hash.String(), nil
 }

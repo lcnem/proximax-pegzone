@@ -20,18 +20,7 @@ func CreateOracleClaimFromMsgPegClaim(cdc *codec.Codec, msg MsgPegClaim) (oracle
 	return claim, nil
 }
 
-func CreateOracleClaimFromMsgUnpegNotCosignedClaim(cdc *codec.Codec, msg MsgUnpegNotCosignedClaim) (oracle.Claim, error) {
-	oracleID := msg.TxHash
-	claimBytes, err := json.Marshal(msg)
-	if err != nil {
-		return oracle.Claim{}, err
-	}
-	claimString := string(claimBytes)
-	claim := oracle.NewClaim(oracleID, msg.Address, claimString)
-	return claim, nil
-}
-
-func CreateOracleClaimFromMsgInvitationNotCosignedClaim(cdc *codec.Codec, msg MsgInvitationNotCosignedClaim) (oracle.Claim, error) {
+func CreateOracleClaimFromMsgNotCosignedClaim(cdc *codec.Codec, msg MsgNotCosignedClaim) (oracle.Claim, error) {
 	oracleID := msg.TxHash
 	claimBytes, err := json.Marshal(msg)
 	if err != nil {
@@ -59,26 +48,12 @@ func CreateMsgPegClaimFromOracleString(oracleClaimString string) (MsgPegClaim, e
 // CreateOracleClaimFromOracleString converts a JSON string into an OracleClaimContent struct used by this module.
 // In general, it is expected that the oracle module will store claims in this JSON format
 // and so this should be used to convert oracle claims.
-func CreateMsgUnpegNotCosignedClaimFromOracleString(oracleClaimString string) (MsgUnpegNotCosignedClaim, error) {
-	var oracleClaim MsgUnpegNotCosignedClaim
+func CreateMsgNotCosignedClaimFromOracleString(oracleClaimString string) (MsgNotCosignedClaim, error) {
+	var oracleClaim MsgNotCosignedClaim
 
 	bz := []byte(oracleClaimString)
 	if err := json.Unmarshal(bz, &oracleClaim); err != nil {
-		return MsgUnpegNotCosignedClaim{}, sdkerrors.Wrap(ErrJSONMarshalling, fmt.Sprintf("failed to parse claim: %s", err.Error()))
-	}
-
-	return oracleClaim, nil
-}
-
-// CreateOracleClaimFromOracleString converts a JSON string into an OracleClaimContent struct used by this module.
-// In general, it is expected that the oracle module will store claims in this JSON format
-// and so this should be used to convert oracle claims.
-func CreateMsgInvitationNotCosignedClaimFromOracleString(oracleClaimString string) (MsgInvitationNotCosignedClaim, error) {
-	var oracleClaim MsgInvitationNotCosignedClaim
-
-	bz := []byte(oracleClaimString)
-	if err := json.Unmarshal(bz, &oracleClaim); err != nil {
-		return MsgInvitationNotCosignedClaim{}, sdkerrors.Wrap(ErrJSONMarshalling, fmt.Sprintf("failed to parse claim: %s", err.Error()))
+		return MsgNotCosignedClaim{}, sdkerrors.Wrap(ErrJSONMarshalling, fmt.Sprintf("failed to parse claim: %s", err.Error()))
 	}
 
 	return oracleClaim, nil

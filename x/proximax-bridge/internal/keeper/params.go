@@ -17,3 +17,15 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.paramspace.SetParamSet(ctx, &params)
 }
+
+func (k Keeper) AddNewCosigner(ctx sdk.Context, address sdk.ValAddress, mainchainPublicKey string) {
+	params := k.GetParams(ctx)
+
+	for _, cosigner := range params.Cosigners {
+		if cosigner.MainchainPublicKey == mainchainPublicKey {
+			return
+		}
+	}
+	params.Cosigners = append(params.Cosigners, types.Cosigner{ValidatorAddress: address.String(), MainchainPublicKey: mainchainPublicKey})
+	k.SetParams(ctx, params)
+}

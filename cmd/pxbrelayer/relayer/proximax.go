@@ -61,10 +61,10 @@ func InitProximaXRelayer(
 	err = wsClient.AddStatusHandlers(account.Address, func(info *sdk.StatusInfo) bool {
 		hash := info.Hash.String()
 
-		msg := msgTypes.NewMsgUnpegNotCosignedClaim(validatorAddress, hash)
-		err := txs.RelayUnpegNotCosigned(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
+		msg := msgTypes.NewMsgNotCosignedClaim(validatorAddress, hash)
+		err := txs.RelayNotCosigned(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
 		if err != nil {
-			logger.Error("Failed to Relay UnpegNotCosigned", "err", err)
+			logger.Error("Failed to Relay NotCosigned", "err", err)
 		}
 		return false
 	})
@@ -76,7 +76,27 @@ func InitProximaXRelayer(
 		msg := msgTypes.NewMsgNotifyCosigned(validatorAddress, txHash, signerPublicKey)
 		err := txs.RelayNotifyCosigned(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
 		if err != nil {
-			logger.Error("Failed to Relay UnpegNotCosigned", "err", err)
+			logger.Error("Failed to Relay NotifyCosigned", "err", err)
+		}
+
+		return true
+	})
+
+	err = wsClient.AddConfirmedAddedHandlers(multisigAccount.Address, func(info sdk.Transaction) bool {
+		aggregateTx, ok := info.(*sdk.AggregateTransaction)
+		if ok {
+			txHash := aggregateTx.TransactionHash.String()
+
+			for _, tx := range aggregateTx.InnerTransactions {
+				_, ok := tx.(*sdk.ModifyMultisigAccountTransaction)
+				if ok {
+					msg := msgTypes.NewMsgConfirmedInvitation(validatorAddress, txHash)
+					err := txs.RelayConfirmedInvitation(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
+					if err != nil {
+						logger.Error("Failed to Relay ConfirmedInvitation", "err", err)
+					}
+				}
+			}
 		}
 
 		return true

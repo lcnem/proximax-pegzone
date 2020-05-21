@@ -60,7 +60,6 @@ type RequestInvitationReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// TODO: Define more types if needed
 	Address              string `json:"address" yaml:"address"`
-	MainchainAddress     string `json:"mainchain_address" yaml:"mainchain_address"`
 	NewCosignerPublicKey string `json:"new_cosigner_public_key" yaml:"new_cosigner_public_key"`
 	FirstCosignerAddress string `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
@@ -80,7 +79,6 @@ func RequestInvitationRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFu
 		// TODO: Define the module tx logic for this action
 		msg := types.NewMsgRequestInvitation(
 			address,
-			req.MainchainAddress,
 			req.NewCosignerPublicKey,
 			firstCosignerAddress,
 		)
