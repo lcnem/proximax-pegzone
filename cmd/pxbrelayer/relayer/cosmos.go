@@ -142,7 +142,7 @@ func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
 		sub.Logger.Error("Transaction is not confirmed", "group", status.Group)
 		return
 	}
-	err = txs.RelayPeg(sub.Cdc, sub.RpcUrl, sub.ChainId, cosmosMsg, sub.ValidatorMonkier)
+	err = txs.RelayPeg(sub.Cdc, sub.RpcUrl, sub.ChainId, cosmosMsg, sub.ValidatorMonkier, sub.ValidatorAddress)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
 	}
@@ -166,8 +166,8 @@ func (sub *CosmosSub) handleUnpegEvent(attributes []tmKv.Pair) {
 	firstCosignatory, err := sub.ProximaXClient.NewAccountFromPrivateKey(sub.ProximaxPrivateKey)
 	publicKey := firstCosignatory.PublicAccount.PublicKey
 
-	recordMsg := msgTypes.NewMsgRecordUnpeg(msg.Address, msg.FromAddress, txHash, msg.Amount, publicKey)
-	err = txs.RelayRecordUnpeg(sub.Cdc, sub.RpcUrl, sub.ChainId, &recordMsg, sub.ValidatorMonkier, msg.FirstCosignerAddress)
+	recordMsg := msgTypes.NewMsgRecordUnpeg(msg.Address, txHash, msg.Amount, publicKey, sub.ValidatorAddress)
+	err = txs.RelayRecordUnpeg(sub.Cdc, sub.RpcUrl, sub.ChainId, &recordMsg, sub.ValidatorMonkier)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
 	}

@@ -137,7 +137,7 @@ func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 	}
 
 	if err := k.supplyKeeper.SendCoinsFromModuleToAccount(
-		ctx, types.ModuleName, oracleClaim.ToAddress, oracleClaim.Amount,
+		ctx, types.ModuleName, oracleClaim.Address, oracleClaim.Amount,
 	); err != nil {
 		panic(err)
 	}
@@ -147,7 +147,7 @@ func (k Keeper) ProcessSuccessfulPegClaim(ctx sdk.Context, claim string) error {
 
 func (k Keeper) ProcessUnpeg(ctx sdk.Context, msg types.MsgUnpeg) error {
 	if err := k.supplyKeeper.SendCoinsFromAccountToModule(
-		ctx, msg.FromAddress, types.ModuleName, msg.Amount,
+		ctx, msg.Address, types.ModuleName, msg.Amount,
 	); err != nil {
 		return err
 	}

@@ -12,16 +12,14 @@ var _ sdk.Msg = &MsgPeg{}
 type MsgPeg struct {
 	Address         sdk.AccAddress `json:"address" yaml:"address"`
 	MainchainTxHash string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
-	ToAddress       sdk.AccAddress `json:"to_address" yaml:"to_address"`
 	Amount          sdk.Coins      `json:"amount" yaml:"amount"`
 }
 
 // NewMsgUnpeg creates a new MsgUnpeg instance
-func NewMsgPeg(address sdk.AccAddress, mainchainTxHash string, toAddress sdk.AccAddress, amount sdk.Coins) MsgPeg {
+func NewMsgPeg(address sdk.AccAddress, mainchainTxHash string, amount sdk.Coins) MsgPeg {
 	return MsgPeg{
 		Address:         address,
 		MainchainTxHash: mainchainTxHash,
-		ToAddress:       toAddress,
 		Amount:          amount,
 	}
 }
@@ -57,19 +55,19 @@ var _ sdk.Msg = &MsgPegClaim{}
 
 // MsgPegClaim - struct for unjailing jailed validator
 type MsgPegClaim struct {
-	Address         sdk.ValAddress `json:"address" yaml:"address"`
-	MainchainTxHash string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
-	ToAddress       sdk.AccAddress `json:"to_address" yaml:"to_address"`
-	Amount          sdk.Coins      `json:"amount" yaml:"amount"`
+	Address          sdk.AccAddress `json:"address" yaml:"address"`
+	MainchainTxHash  string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	Amount           sdk.Coins      `json:"amount" yaml:"amount"`
+	ValidatorAddress sdk.ValAddress `json:"validator_address" yaml:"validator_address"`
 }
 
 // NewMsgPegClaim creates a new MsgPegClaim instance
-func NewMsgPegClaim(address sdk.ValAddress, mainchainTxHash string, toAddress sdk.AccAddress, amount sdk.Coins) MsgPegClaim {
+func NewMsgPegClaim(address sdk.AccAddress, mainchainTxHash string, amount sdk.Coins, validatorAddress sdk.ValAddress) MsgPegClaim {
 	return MsgPegClaim{
-		Address:         address,
-		MainchainTxHash: mainchainTxHash,
-		ToAddress:       toAddress,
-		Amount:          amount,
+		Address:          address,
+		MainchainTxHash:  mainchainTxHash,
+		Amount:           amount,
+		ValidatorAddress: validatorAddress,
 	}
 }
 
@@ -79,7 +77,7 @@ const pegClaimConst = "peg_claim"
 func (msg MsgPegClaim) Route() string { return RouterKey }
 func (msg MsgPegClaim) Type() string  { return pegClaimConst }
 func (msg MsgPegClaim) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+	return []sdk.AccAddress{sdk.AccAddress(msg.ValidatorAddress)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -103,17 +101,15 @@ var _ sdk.Msg = &MsgUnpeg{}
 // MsgUnpeg - struct for unjailing jailed validator
 type MsgUnpeg struct {
 	Address              sdk.AccAddress `json:"address" yaml:"address"`
-	FromAddress          sdk.AccAddress `json:"from_address" yaml:"from_address"`
 	MainchainAddress     string         `json:"mainchain_address" yaml:"mainchain_address"`
 	Amount               sdk.Coins      `json:"amount" yaml:"amount"`
 	FirstCosignerAddress sdk.ValAddress `json:"first_cosigner_address" yaml:"first_cosigner_address"`
 }
 
 // NewMsgUnpeg creates a new MsgUnpeg instance
-func NewMsgUnpeg(address sdk.AccAddress, fromAddress sdk.AccAddress, mainchainAddress string, amount sdk.Coins, firstCosignerAddress sdk.ValAddress) MsgUnpeg {
+func NewMsgUnpeg(address sdk.AccAddress, mainchainAddress string, amount sdk.Coins, firstCosignerAddress sdk.ValAddress) MsgUnpeg {
 	return MsgUnpeg{
 		Address:              address,
-		FromAddress:          fromAddress,
 		MainchainAddress:     mainchainAddress,
 		Amount:               amount,
 		FirstCosignerAddress: firstCosignerAddress,
@@ -126,7 +122,7 @@ const unpegConst = "unpeg"
 func (msg MsgUnpeg) Route() string { return RouterKey }
 func (msg MsgUnpeg) Type() string  { return unpegConst }
 func (msg MsgUnpeg) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+	return []sdk.AccAddress{msg.Address}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on
@@ -148,20 +144,20 @@ var _ sdk.Msg = &MsgRecordUnpeg{}
 // MsgUnpeg - struct for unjailing jailed validator
 type MsgRecordUnpeg struct {
 	Address                sdk.AccAddress `json:"address" yaml:"address"`
-	FromAddress            sdk.AccAddress `json:"from_address" yaml:"from_address"`
 	MainchainTxHash        string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
 	Amount                 sdk.Coins      `json:"amount" yaml:"amount"`
 	FirstCosignerPublicKey string         `json:"first_cosigner_public_key" yaml:"first_cosigner_public_key"`
+	ValidatorAddress       sdk.ValAddress `json:"validator_address" yaml:"validator_address"`
 }
 
 // NewMsgUnpeg creates a new MsgUnpeg instance
-func NewMsgRecordUnpeg(address, fromAddress sdk.AccAddress, mainchainTxHash string, amount sdk.Coins, firstCosignerPublicKey string) MsgRecordUnpeg {
+func NewMsgRecordUnpeg(address sdk.AccAddress, mainchainTxHash string, amount sdk.Coins, firstCosignerPublicKey string, validatorAddress sdk.ValAddress) MsgRecordUnpeg {
 	return MsgRecordUnpeg{
 		Address:                address,
-		FromAddress:            fromAddress,
 		MainchainTxHash:        mainchainTxHash,
 		Amount:                 amount,
 		FirstCosignerPublicKey: firstCosignerPublicKey,
+		ValidatorAddress:       validatorAddress,
 	}
 }
 
@@ -171,7 +167,7 @@ const recordUnpegConst = "record_unpeg"
 func (msg MsgRecordUnpeg) Route() string { return RouterKey }
 func (msg MsgRecordUnpeg) Type() string  { return recordUnpegConst }
 func (msg MsgRecordUnpeg) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.Address)}
+	return []sdk.AccAddress{sdk.AccAddress(msg.ValidatorAddress)}
 }
 
 // GetSignBytes gets the bytes for the message signer to sign on

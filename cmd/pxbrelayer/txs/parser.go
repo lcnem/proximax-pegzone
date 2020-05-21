@@ -8,9 +8,8 @@ import (
 )
 
 func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
-	var cosmosSender sdk.AccAddress
+	var cosmosReceiver sdk.AccAddress
 	var mainchainTxHash string
-	var toAddress sdk.AccAddress
 	var amount sdk.Coins
 	var err error
 
@@ -18,14 +17,11 @@ func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
 		key := string(attribute.GetKey())
 		val := string(attribute.GetValue())
 		switch key {
-		case "cosmos_sender":
-			cosmosSender, err = sdk.AccAddressFromBech32(val)
+		case "cosmos_receiver":
+			cosmosReceiver, err = sdk.AccAddressFromBech32(val)
 			break
 		case "mainchain_tx_hash":
 			mainchainTxHash = val
-			break
-		case "cosmos_receiver":
-			toAddress, err = sdk.AccAddressFromBech32(val)
 			break
 		case "amount":
 			amount, err = sdk.ParseCoins(val)
@@ -35,13 +31,12 @@ func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
 	if err != nil {
 		return nil, err
 	}
-	cosmosMsg := msgTypes.NewMsgPeg(cosmosSender, mainchainTxHash, toAddress, amount)
+	cosmosMsg := msgTypes.NewMsgPeg(cosmosReceiver, mainchainTxHash, amount)
 	return &cosmosMsg, nil
 }
 
 func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 	var address sdk.AccAddress
-	var cosmosAccount sdk.AccAddress
 	var mainchainAddress string
 	var amount sdk.Coins
 	var firstCosignerAddress sdk.ValAddress
@@ -53,12 +48,6 @@ func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 		switch key {
 		case "cosmos_sender":
 			address, err = sdk.AccAddressFromBech32(val)
-			if err != nil {
-				return nil, err
-			}
-			break
-		case "cosmos_account":
-			cosmosAccount, err = sdk.AccAddressFromBech32(val)
 			if err != nil {
 				return nil, err
 			}
@@ -79,7 +68,7 @@ func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
 			}
 		}
 	}
-	cosmosMsg := msgTypes.NewMsgUnpeg(address, cosmosAccount, mainchainAddress, amount, firstCosignerAddress)
+	cosmosMsg := msgTypes.NewMsgUnpeg(address, mainchainAddress, amount, firstCosignerAddress)
 	return &cosmosMsg, nil
 }
 
