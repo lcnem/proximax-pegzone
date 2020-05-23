@@ -3,35 +3,54 @@ package txs
 import (
 	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/keys"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	types "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 )
 
-func RelayPeg(
-	cdc *codec.Codec,
-	rpcURL string,
-	chainID string,
-	claim *types.MsgPeg,
-	moniker string,
-	validatorAddress sdk.ValAddress,
+func RelayMsg(
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	validatorMoniker string,
+	msg sdk.Msg,
 ) error {
-	msg := types.NewMsgPegClaim(claim.Address, claim.MainchainTxHash, claim.Amount, validatorAddress)
-
-	cliCtx := sdkContext.NewCLIContext().
-		WithCodec(cdc).
-		WithFromAddress(sdk.AccAddress(validatorAddress))
-	if rpcURL != "" {
-		cliCtx = cliCtx.WithNodeURI(rpcURL)
+	// Validate message
+	err := msg.ValidateBasic()
+	if err != nil {
+		return err
 	}
-	cliCtx.SkipConfirm = true
 
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
+	// Prepare tx
+	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
+	if err != nil {
+		return err
+	}
 
+	// Build and sign the transaction
+	txBytes, err := txBldr.BuildAndSign(validatorMoniker, keys.DefaultKeyPass, []sdk.Msg{msg})
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to a Tendermint node
+	res, err := cliCtx.BroadcastTxSync(txBytes)
+	if err != nil {
+		return err
+	}
+
+	if err = cliCtx.PrintOutput(res); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RelayPeg(
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	validatorMoniker string,
+	msg types.MsgPegClaim,
+) error {
 	// Check if destination account exists
 	accountRetriever := authtypes.NewAccountRetriever(cliCtx)
 	err := accountRetriever.EnsureExists(msg.Address)
@@ -39,190 +58,42 @@ func RelayPeg(
 		return err
 	}
 
-	// Validate message
-	err = msg.ValidateBasic()
-	if err != nil {
-		return err
-	}
-
-	// Prepare tx
-	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
-	if err != nil {
-		return err
-	}
-
-	// Build and sign the transaction
-	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
-	if err != nil {
-		return err
-	}
-
-	// Broadcast to a Tendermint node
-	res, err := cliCtx.BroadcastTxSync(txBytes)
-	if err != nil {
-		return err
-	}
-
-	if err = cliCtx.PrintOutput(res); err != nil {
-		return err
-	}
-	return nil
+	return RelayMsg(cliCtx, txBldr, validatorMoniker, msg)
 }
 
 func RelayRecordUnpeg(
-	cdc *codec.Codec,
-	rpcURL string,
-	chainID string,
-	msg *types.MsgRecordUnpeg,
-	moniker string,
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	validatorMoniker string,
+	msg types.MsgRecordUnpeg,
 ) error {
-	cliCtx := sdkContext.NewCLIContext().
-		WithCodec(cdc).
-		WithFromAddress(sdk.AccAddress(msg.ValidatorAddress))
-
-	if rpcURL != "" {
-		cliCtx = cliCtx.WithNodeURI(rpcURL)
-	}
-	cliCtx.SkipConfirm = true
-
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
-	err := msg.ValidateBasic()
-	if err != nil {
-		return err
-	}
-
-	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
-	if err != nil {
-		return err
-	}
-
-	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
-	if err != nil {
-		return err
-	}
-
-	res, err := cliCtx.BroadcastTxSync(txBytes)
-	if err != nil {
-		return err
-	}
-
-	if err = cliCtx.PrintOutput(res); err != nil {
-		return err
-	}
-	return nil
+	return RelayMsg(cliCtx, txBldr, validatorMoniker, msg)
 }
 
 func RelayNotCosigned(
-	cdc *codec.Codec,
-	cli sdkContext.CLIContext,
-	rpcURL string,
-	chainID string,
-	msg types.MsgNotCosignedClaim,
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
 	validatorMoniker string,
+	msg types.MsgNotCosignedClaim,
 ) error {
-
-	if rpcURL != "" {
-		cli = cli.WithNodeURI(rpcURL)
-	}
-	cli.SkipConfirm = true
-
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
-	err := msg.ValidateBasic()
-	if err != nil {
-		return err
-	}
-
-	txBldr, err = utils.PrepareTxBuilder(txBldr, cli)
-	if err != nil {
-		return err
-	}
-
-	txBytes, err := txBldr.BuildAndSign(validatorMoniker, keys.DefaultKeyPass, []sdk.Msg{msg})
-	if err != nil {
-		return err
-	}
-
-	res, err := cli.BroadcastTxSync(txBytes)
-	if err != nil {
-		return err
-	}
-
-	if err = cli.PrintOutput(res); err != nil {
-		return err
-	}
-	return nil
+	return RelayMsg(cliCtx, txBldr, validatorMoniker, msg)
 }
 
 func RelayNotifyCosigned(
-	cdc *codec.Codec,
-	cli sdkContext.CLIContext,
-	rpcURL string,
-	chainID string,
-	msg types.MsgNotifyCosigned,
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
 	validatorMoniker string,
+	msg types.MsgNotifyCosigned,
 ) error {
-
-	if rpcURL != "" {
-		cli = cli.WithNodeURI(rpcURL)
-	}
-	cli.SkipConfirm = true
-
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
-	err := msg.ValidateBasic()
-	if err != nil {
-		return err
-	}
-
-	txBldr, err = utils.PrepareTxBuilder(txBldr, cli)
-	if err != nil {
-		return err
-	}
-
-	txBytes, err := txBldr.BuildAndSign(validatorMoniker, keys.DefaultKeyPass, []sdk.Msg{msg})
-	if err != nil {
-		return err
-	}
-
-	res, err := cli.BroadcastTxSync(txBytes)
-	if err != nil {
-		return err
-	}
-
-	if err = cli.PrintOutput(res); err != nil {
-		return err
-	}
-	return nil
+	return RelayMsg(cliCtx, txBldr, validatorMoniker, msg)
 }
 
 func RelayPendingRequestInvitation(
-	cdc *codec.Codec,
-	rpcURL string,
-	chainID string,
-	msg *types.MsgPendingRequestInvitation,
-	moniker string,
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
+	validatorMoniker string,
+	msg types.MsgPendingRequestInvitation,
 ) error {
-
-	cliCtx := sdkContext.NewCLIContext().
-		WithCodec(cdc).
-		WithFromAddress(sdk.AccAddress(msg.FirstCosignerAddress))
-	if rpcURL != "" {
-		cliCtx = cliCtx.WithNodeURI(rpcURL)
-	}
-	cliCtx.SkipConfirm = true
-
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
 	// Check if destination account exists
 	accountRetriever := authtypes.NewAccountRetriever(cliCtx)
 	err := accountRetriever.EnsureExists(sdk.AccAddress(msg.Address))
@@ -230,76 +101,14 @@ func RelayPendingRequestInvitation(
 		return err
 	}
 
-	// Validate message
-	err = msg.ValidateBasic()
-	if err != nil {
-		return err
-	}
-
-	// Prepare tx
-	txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
-	if err != nil {
-		return err
-	}
-
-	// Build and sign the transaction
-	txBytes, err := txBldr.BuildAndSign(moniker, keys.DefaultKeyPass, []sdk.Msg{msg})
-	if err != nil {
-		return err
-	}
-
-	// Broadcast to a Tendermint node
-	res, err := cliCtx.BroadcastTxSync(txBytes)
-	if err != nil {
-		return err
-	}
-
-	if err = cliCtx.PrintOutput(res); err != nil {
-		return err
-	}
-	return nil
+	return RelayMsg(cliCtx, txBldr, validatorMoniker, msg)
 }
 
 func RelayConfirmedInvitation(
-	cdc *codec.Codec,
-	cli sdkContext.CLIContext,
-	rpcURL string,
-	chainID string,
-	msg types.MsgConfirmedInvitation,
+	cliCtx sdkContext.CLIContext,
+	txBldr authtypes.TxBuilder,
 	validatorMoniker string,
+	msg types.MsgConfirmedInvitation,
 ) error {
-
-	if rpcURL != "" {
-		cli = cli.WithNodeURI(rpcURL)
-	}
-	cli.SkipConfirm = true
-
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
-	err := msg.ValidateBasic()
-	if err != nil {
-		return err
-	}
-
-	txBldr, err = utils.PrepareTxBuilder(txBldr, cli)
-	if err != nil {
-		return err
-	}
-
-	txBytes, err := txBldr.BuildAndSign(validatorMoniker, keys.DefaultKeyPass, []sdk.Msg{msg})
-	if err != nil {
-		return err
-	}
-
-	res, err := cli.BroadcastTxSync(txBytes)
-	if err != nil {
-		return err
-	}
-
-	if err = cli.PrintOutput(res); err != nil {
-		return err
-	}
-	return nil
+	return RelayMsg(cliCtx, txBldr, validatorMoniker, msg)
 }

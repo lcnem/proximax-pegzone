@@ -49,11 +49,6 @@ func GetCmdPeg(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			cosmosSender, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return err
-			}
-
 			mainchainTxHash := args[1]
 			if len(strings.Trim(mainchainTxHash, "")) == 0 {
 				return errors.New(fmt.Sprintf("invalid [mainchain_tx_hash]: %s", mainchainTxHash))
@@ -64,7 +59,7 @@ func GetCmdPeg(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgPeg(cosmosSender, mainchainTxHash, coins)
+			msg := types.NewMsgPeg(cliCtx.FromAddress, mainchainTxHash, coins)
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -85,11 +80,6 @@ func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			cosmosSender, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return err
-			}
-
 			mainChainAddress := args[1]
 			if len(strings.Trim(mainChainAddress, "")) == 0 {
 				return errors.New(fmt.Sprintf("invalid [mainchain_address]: %s", mainChainAddress))
@@ -105,7 +95,7 @@ func GetCmdUnpeg(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgUnpeg(cosmosSender, mainChainAddress, amount, firstCosignerAddress)
+			msg := types.NewMsgUnpeg(cliCtx.FromAddress, mainChainAddress, amount, firstCosignerAddress)
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
