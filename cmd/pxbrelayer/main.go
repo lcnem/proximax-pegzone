@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/url"
 	"os"
@@ -17,10 +16,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	authtxb "github.com/cosmos/cosmos-sdk/x/auth/types"
 	amino "github.com/tendermint/go-amino"
 
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -86,7 +82,7 @@ var initCmd = &cobra.Command{
 
 func proximaxRelayerCmd() *cobra.Command {
 	ethereumRelayerCmd := &cobra.Command{
-		Use:     "proximax init [validator_from_name] [tendermint_node] [proximax_node] [proximax_private_key] [proximax_multisig_address] --chain-id [chain-id]",
+		Use:     "proximax init [tendermint_node] [proximax_node] [validator_from_name] [proximax_private_key] [proximax_multisig_address] --chain-id [chain-id]",
 		Short:   "Initializes a web socket which streams live events from the ProximaX network and relays them to the Cosmos network",
 		Args:    cobra.ExactArgs(5),
 		Example: "pxbrelayer init proximax validator http://localhost:7475 http://bctestnet1.brimstone.xpxsirius.io:3000 3A700AE4105431BB0F24440AAA0CD08E1FD0D87D60EB805278F7DB3EA7C7D62D VBK6ZOASJSJOFUOX7XUHHZVCBO4Q11GCF726AKHG --chain-id=testing",
@@ -98,7 +94,7 @@ func proximaxRelayerCmd() *cobra.Command {
 
 func cosmosRelayerCmd() *cobra.Command {
 	cosmosRelayerCmd := &cobra.Command{
-		Use:     "cosmos init [tendermint_node] [proximax_node] [validator_moniker] [proximax_cosigner_private_key] [multisig_account_public_key] --chain-id [chain-id]",
+		Use:     "cosmos init [tendermint_node] [proximax_node] [validator_from_name] [proximax_cosigner_private_key] [multisig_account_public_key] --chain-id [chain-id]",
 		Short:   "Initializes a web socket which streams live events from the Cosmos network and relays them to the ProximaX network",
 		Args:    cobra.ExactArgs(5),
 		Example: "pxbrelayer init cosmos tcp://localhost:26657 http://localhost:7545 --chain-id=testing",
@@ -115,43 +111,35 @@ func RunProximaxRelayerCmd(cmd *cobra.Command, args []string) error {
 		return errors.New("Must specify a 'chain-id'")
 	}
 
-	inBuf := bufio.NewReader(cmd.InOrStdin())
-	// Get the validator's name and account address using their moniker
-	validatorAccAddress, validatorName, err := sdkContext.GetFromFields(inBuf, args[0], false)
-	if err != nil {
-		return err
-	}
-	validatorAddress := sdk.ValAddress(validatorAccAddress)
-
-	tendermintNode := args[1]
+	tendermintNode := args[0]
 	if len(strings.Trim(tendermintNode, "")) == 0 {
 		return errors.New(fmt.Sprintf("invalid [tendermint_node]: %s", tendermintNode))
 	}
 
-	proximaxNode := args[2]
-	if len(strings.Trim(proximaxNode, "")) == 0 {
-		return errors.New(fmt.Sprintf("invalid [proximax_node]: %s", proximaxNode))
+	proximaXNode := args[1]
+	if len(strings.Trim(proximaXNode, "")) == 0 {
+		return errors.New(fmt.Sprintf("invalid [proximax_node]: %s", proximaXNode))
 	}
 
-	proximaxCosignerPrivateKey := args[3]
-	if len(strings.Trim(proximaxCosignerPrivateKey, "")) == 0 {
-		return errors.New(fmt.Sprintf("invalid [proximax_private_key]: %s", proximaxCosignerPrivateKey))
+	validatorMoniker := args[2]
+	if len(strings.Trim(validatorMoniker, "")) == 0 {
+		return errors.New(fmt.Sprintf("invalid [validator_from_name]: %s", validatorMoniker))
 	}
 
-	proximaxMultisigPublicKey := args[4]
-	if len(strings.Trim(proximaxMultisigPublicKey, "")) == 0 {
-		return errors.New(fmt.Sprintf("invalid [proximax_multisig_address]: %s", proximaxMultisigPublicKey))
+	proximaXCosignerPrivateKey := args[3]
+	if len(strings.Trim(proximaXCosignerPrivateKey, "")) == 0 {
+		return errors.New(fmt.Sprintf("invalid [proximax_private_key]: %s", proximaXCosignerPrivateKey))
 	}
 
-	// Set up our CLIContext
-	cliCtx := sdkContext.NewCLIContext().
-		WithCodec(appCodec).
-		WithFromAddress(sdk.AccAddress(validatorAddress)).
-		WithFromName(validatorName)
+	proximaXMultisigPublicKey := args[4]
+	if len(strings.Trim(proximaXMultisigPublicKey, "")) == 0 {
+		return errors.New(fmt.Sprintf("invalid [proximax_multisig_address]: %s", proximaXMultisigPublicKey))
+	}
 
+	inBuf := bufio.NewReader(cmd.InOrStdin())
 	logger := tmLog.NewTMLogger(tmLog.NewSyncWriter(os.Stdout))
 
-	return relayer.InitProximaXRelayer(appCodec, cliCtx, logger, tendermintNode, chainID, proximaxNode, proximaxCosignerPrivateKey, proximaxMultisigPublicKey, validatorAddress, validatorName)
+	return relayer.InitProximaXRelayer(inBuf, appCodec, logger, tendermintNode, chainID, validatorMoniker, proximaXNode, proximaXCosignerPrivateKey, proximaXMultisigPublicKey)
 }
 
 // RunCosmosRelayerCmd executes the initCosmosRelayerCmd with the provided parameters
@@ -159,14 +147,6 @@ func RunCosmosRelayerCmd(cmd *cobra.Command, args []string) error {
 	chainID := viper.GetString(flags.FlagChainID)
 	if strings.TrimSpace(chainID) == "" {
 		return errors.New("Must specify a 'chain-id'")
-	}
-
-	rpcURL := viper.GetString(FlagRPCURL)
-	if rpcURL != "" {
-		_, err := url.Parse(rpcURL)
-		if rpcURL != "" && err != nil {
-			return errors.New(fmt.Sprintf("invalid RPC URL: %v", rpcURL))
-		}
 	}
 
 	tendermintNode := args[0]
@@ -184,7 +164,7 @@ func RunCosmosRelayerCmd(cmd *cobra.Command, args []string) error {
 
 	validatorMoniker := args[2]
 	if len(strings.Trim(validatorMoniker, "")) == 0 {
-		return errors.New(fmt.Sprintf("invalid [validator-moniker]: %s", validatorMoniker))
+		return errors.New(fmt.Sprintf("invalid [validator_from_name]: %s", validatorMoniker))
 	}
 
 	cosignerPrivateKey := args[3]
@@ -197,15 +177,13 @@ func RunCosmosRelayerCmd(cmd *cobra.Command, args []string) error {
 		return errors.New(fmt.Sprintf("invalid [multisig_account_public_key]: %s", multisigPubicKey))
 	}
 
-	inBuf := bufio.NewReader(cmd.InOrStdin())
-	validatorAddress, _, err := loadValidatorCredentials(validatorMoniker, inBuf)
-	if err != nil {
-		return errors.New(fmt.Sprintf("faild to get validator address: %s", validatorMoniker))
-	}
-
 	logger := tmLog.NewTMLogger(tmLog.NewSyncWriter(os.Stdout))
 
-	cosmosSub := relayer.NewCosmosSub(rpcURL, appCodec, validatorMoniker, validatorAddress, chainID, tendermintNode, proximaXNode, cosignerPrivateKey, multisigPubicKey, logger)
+	inBuf := bufio.NewReader(cmd.InOrStdin())
+	cosmosSub, err := relayer.NewCosmosSub(inBuf, appCodec, logger, chainID, validatorMoniker, tendermintNode, proximaXNode, cosignerPrivateKey, multisigPubicKey)
+	if err != nil {
+		return err
+	}
 
 	exitSignal := make(chan os.Signal, 1)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
@@ -218,21 +196,6 @@ func RunCosmosRelayerCmd(cmd *cobra.Command, args []string) error {
 
 func initConfig(cmd *cobra.Command) error {
 	return viper.BindPFlag(flags.FlagChainID, cmd.PersistentFlags().Lookup(flags.FlagChainID))
-}
-
-func loadValidatorCredentials(validatorFrom string, inBuf io.Reader) (sdk.ValAddress, string, error) {
-	validatorAccAddress, validatorName, err := sdkContext.GetFromFields(inBuf, validatorFrom, false)
-	if err != nil {
-		return sdk.ValAddress{}, "", err
-	}
-	validatorAddress := sdk.ValAddress(validatorAccAddress)
-
-	_, err = authtxb.MakeSignature(nil, validatorName, keys.DefaultKeyPass, authtxb.StdSignMsg{})
-	if err != nil {
-		return sdk.ValAddress{}, "", err
-	}
-
-	return validatorAddress, validatorName, nil
 }
 
 func main() {

@@ -3,14 +3,14 @@ package relayer
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
-	cosmosSdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/lcnem/proximax-pegzone/cmd/pxbrelayer/txs"
 	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 	"github.com/proximax-storage/go-xpx-chain-sdk/sdk"
@@ -19,21 +19,29 @@ import (
 )
 
 func InitProximaXRelayer(
+	inBuf io.Reader,
 	cdc *codec.Codec,
-	cli sdkContext.CLIContext,
 	logger tmLog.Logger,
+
 	tendermintNode string,
 	chainID string,
+	validatorMoniker string,
+
 	proximaxNode string,
 	proximaxPrivateKey string,
 	proximaxMultisigAddress string,
-	validatorAddress cosmosSdk.ValAddress,
-	validatorMoniker string,
 ) error {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*30)
-	defer cancel()
+	validatorAddress, validatorName, err := LoadValidatorCredentials(validatorMoniker, inBuf)
+	if err != nil {
+		return err
+	}
 
-	conf, err := sdk.NewConfig(ctx, []string{proximaxNode})
+	cliCtx := LoadTendermintCLIContext(cdc, validatorAddress, validatorName, tendermintNode, chainID)
+	txBldr := authtypes.NewTxBuilderFromCLI(nil).
+		WithTxEncoder(utils.GetTxEncoder(cdc)).
+		WithChainID(chainID)
+
+	conf, err := sdk.NewConfig(context.Background(), []string{proximaxNode})
 	if err != nil {
 		return err
 	}
@@ -62,7 +70,7 @@ func InitProximaXRelayer(
 		hash := info.Hash.String()
 
 		msg := msgTypes.NewMsgNotCosignedClaim(validatorAddress, hash)
-		err := txs.RelayNotCosigned(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
+		err := txs.RelayNotCosigned(cliCtx, txBldr, validatorMoniker, msg)
 		if err != nil {
 			logger.Error("Failed to Relay NotCosigned", "err", err)
 		}
@@ -74,7 +82,7 @@ func InitProximaXRelayer(
 		signerPublicKey := info.Signer
 
 		msg := msgTypes.NewMsgNotifyCosigned(validatorAddress, txHash, signerPublicKey)
-		err := txs.RelayNotifyCosigned(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
+		err := txs.RelayNotifyCosigned(cliCtx, txBldr, validatorMoniker, msg)
 		if err != nil {
 			logger.Error("Failed to Relay NotifyCosigned", "err", err)
 		}
@@ -91,7 +99,7 @@ func InitProximaXRelayer(
 				_, ok := tx.(*sdk.ModifyMultisigAccountTransaction)
 				if ok {
 					msg := msgTypes.NewMsgConfirmedInvitation(validatorAddress, txHash)
-					err := txs.RelayConfirmedInvitation(cdc, cli, tendermintNode, chainID, msg, validatorMoniker)
+					err := txs.RelayConfirmedInvitation(cliCtx, txBldr, validatorMoniker, msg)
 					if err != nil {
 						logger.Error("Failed to Relay ConfirmedInvitation", "err", err)
 					}

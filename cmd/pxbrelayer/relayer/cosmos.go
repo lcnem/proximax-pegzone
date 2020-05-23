@@ -3,13 +3,16 @@ package relayer
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
+	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/types"
 	proximax "github.com/proximax-storage/go-xpx-chain-sdk/sdk"
 	"github.com/proximax-storage/go-xpx-utils/logger"
 	tmKv "github.com/tendermint/tendermint/libs/kv"
@@ -21,59 +24,72 @@ import (
 )
 
 type CosmosSub struct {
-	Cdc                      *codec.Codec
-	RpcUrl                   string
-	ChainId                  string
-	TendermintProvider       string
-	ProximaXProvider         string
-	CliCtx                   sdkContext.CLIContext
-	TxBldr                   authtypes.TxBuilder
-	ValidatorMonkier         string
+	Cdc    *codec.Codec
+	Logger tmLog.Logger
+	CliCtx sdkContext.CLIContext
+	TxBldr authtypes.TxBuilder
+
+	ChainId string
+
+	ValidatorMoniker         string
+	ValidatorName            string
 	ValidatorAddress         sdk.ValAddress
 	ProximaxPrivateKey       string
 	ProximxMultisigPublicKey string
-	Logger                   tmLog.Logger
-	ProximaXClient           *proximax.Client
+
+	TendermintClient *tmClient.HTTP
+	ProximaXClient   *proximax.Client
 }
 
-func NewCosmosSub(rpcURL string, cdc *codec.Codec, validatorMonkier string, validatorAddress sdk.ValAddress, chainID, tendermintProvider, proximaXProvicer, proximaxPrivateKey, proximxMultisigPublicKey string, logger tmLog.Logger) CosmosSub {
+func NewCosmosSub(inBuf io.Reader, cdc *codec.Codec, logger tmLog.Logger, chainID, validatorMoniker, tendermintNode, proximaXNode, proximaXPrivateKey, proximaXMultisibPubKey string) (CosmosSub, error) {
+	validatorAddress, validatorName, err := LoadValidatorCredentials(validatorMoniker, inBuf)
+	if err != nil {
+		return CosmosSub{}, err
+	}
+
+	cliCtx := LoadTendermintCLIContext(cdc, validatorAddress, validatorName, tendermintNode, chainID)
+	txBldr := authtypes.NewTxBuilderFromCLI(nil).
+		WithTxEncoder(utils.GetTxEncoder(cdc)).
+		WithChainID(chainID)
+
+	conf, err := proximax.NewConfig(context.Background(), []string{proximaXNode})
+	if err != nil {
+		return CosmosSub{}, err
+	}
+
+	tendermintClient, err := tmClient.NewHTTP(tendermintNode, "/websocket")
+	if err != nil {
+		return CosmosSub{}, err
+	}
+	tendermintClient.SetLogger(logger)
+
 	return CosmosSub{
 		Cdc:                      cdc,
-		RpcUrl:                   rpcURL,
-		ChainId:                  chainID,
-		TendermintProvider:       tendermintProvider,
-		ProximaXProvider:         proximaXProvicer,
-		ValidatorMonkier:         validatorMonkier,
-		ValidatorAddress:         validatorAddress,
-		ProximaxPrivateKey:       proximaxPrivateKey,
-		ProximxMultisigPublicKey: proximxMultisigPublicKey,
 		Logger:                   logger,
-	}
+		CliCtx:                   cliCtx,
+		TxBldr:                   txBldr,
+		ChainId:                  chainID,
+		ValidatorMoniker:         validatorMoniker,
+		ValidatorName:            validatorName,
+		ValidatorAddress:         validatorAddress,
+		ProximaxPrivateKey:       proximaXPrivateKey,
+		ProximxMultisigPublicKey: proximaXMultisibPubKey,
+		TendermintClient:         tendermintClient,
+		ProximaXClient:           proximax.NewClient(nil, conf),
+	}, nil
 }
 
 func (sub *CosmosSub) Start(exitSignal chan os.Signal) {
-	conf, err := proximax.NewConfig(context.Background(), []string{sub.ProximaXProvider})
-	if err != nil {
-		sub.Logger.Error("Failed to initialize ProximaX client", "err", err)
-		os.Exit(1)
-	}
-	sub.ProximaXClient = proximax.NewClient(nil, conf)
 
-	tendermintClient, err := tmClient.NewHTTP(sub.TendermintProvider, "/websocket")
+	err := sub.TendermintClient.Start()
 	if err != nil {
 		sub.Logger.Error("Failed to start a client", "err", err)
 		os.Exit(1)
 	}
-	tendermintClient.SetLogger(sub.Logger)
-	err = tendermintClient.Start()
-	if err != nil {
-		sub.Logger.Error("Failed to start a client", "err", err)
-		os.Exit(1)
-	}
-	defer tendermintClient.Stop()
+	defer sub.TendermintClient.Stop()
 
 	query := "tm.event = 'Tx'"
-	out, err := tendermintClient.Subscribe(context.Background(), "test", query, 1000)
+	out, err := sub.TendermintClient.Subscribe(context.Background(), "test", query, 1000)
 	if err != nil {
 		sub.Logger.Error("Failed to subscribe to query", "err", err, "query", query)
 		os.Exit(1)
@@ -86,8 +102,6 @@ func (sub *CosmosSub) Start(exitSignal chan os.Signal) {
 			if !ok {
 				logger.Error("Type casting failed while extracting event data from new tx")
 			}
-
-			logger.Info("New transaction witnessed")
 
 			// Iterate over each event inside of the transaction
 			for _, event := range tx.Result.Events {
@@ -142,7 +156,8 @@ func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
 		sub.Logger.Error("Transaction is not confirmed", "group", status.Group)
 		return
 	}
-	err = txs.RelayPeg(sub.Cdc, sub.RpcUrl, sub.ChainId, cosmosMsg, sub.ValidatorMonkier, sub.ValidatorAddress)
+	msg := types.NewMsgPegClaim(cosmosMsg.Address, cosmosMsg.MainchainTxHash, cosmosMsg.Amount, sub.ValidatorAddress)
+	err = txs.RelayPeg(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, msg)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
 	}
@@ -167,7 +182,7 @@ func (sub *CosmosSub) handleUnpegEvent(attributes []tmKv.Pair) {
 	publicKey := firstCosignatory.PublicAccount.PublicKey
 
 	recordMsg := msgTypes.NewMsgRecordUnpeg(msg.Address, txHash, msg.Amount, publicKey, sub.ValidatorAddress)
-	err = txs.RelayRecordUnpeg(sub.Cdc, sub.RpcUrl, sub.ChainId, &recordMsg, sub.ValidatorMonkier)
+	err = txs.RelayRecordUnpeg(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, recordMsg)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
 	}
@@ -196,7 +211,7 @@ func (sub *CosmosSub) handleRequestInvitationEvent(attributes []tmKv.Pair) {
 	pubKey := account.PublicAccount.PublicKey
 
 	pendingMsg := msgTypes.NewMsgPendingRequestInvitation(msg.Address, msg.NewCosignerPublicKey, msg.FirstCosignerAddress, pubKey, txHash)
-	err = txs.RelayPendingRequestInvitation(sub.Cdc, sub.RpcUrl, sub.ChainId, &pendingMsg, sub.ValidatorMonkier)
+	err = txs.RelayPendingRequestInvitation(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, pendingMsg)
 	if err != nil {
 		sub.Logger.Error("Failed to broadcase Cosmos transaction to notify pending request", "err", err)
 		return
