@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/lcnem/proximax-pegzone/cmd/pxbrelayer/txs"
 	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 	"github.com/lcnem/proximax-pegzone/x/proximax-bridge/types"
 	proximax "github.com/proximax-storage/go-xpx-chain-sdk/sdk"
@@ -19,8 +20,6 @@ import (
 	tmLog "github.com/tendermint/tendermint/libs/log"
 	tmClient "github.com/tendermint/tendermint/rpc/client"
 	tmTypes "github.com/tendermint/tendermint/types"
-
-	"github.com/lcnem/proximax-pegzone/cmd/pxbrelayer/txs"
 )
 
 type CosmosSub struct {
@@ -127,7 +126,7 @@ func (sub *CosmosSub) Start(exitSignal chan os.Signal) {
 }
 
 func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
-	cosmosMsg, err := txs.PegEventToCosmosMsg(attributes)
+	cosmosMsg, consumed, err := txs.PegEventToCosmosMsg(attributes)
 	if err != nil {
 		sub.Logger.Error("Failed to convert PegClaim event to Cosmos Message", "err", err)
 		return
@@ -156,7 +155,31 @@ func (sub *CosmosSub) handlePegEvent(attributes []tmKv.Pair) {
 		sub.Logger.Error("Transaction is not confirmed", "group", status.Group)
 		return
 	}
-	msg := types.NewMsgPegClaim(cosmosMsg.Address, cosmosMsg.MainchainTxHash, cosmosMsg.Amount, sub.ValidatorAddress)
+
+	transferTx, ok := tx.(*proximax.TransferTransaction)
+	if !ok {
+		sub.Logger.Error(fmt.Sprintf("Faild to get transfer transaction: %+v", transferTx))
+		return
+	}
+
+	unit := int64(proximax.XpxRelative(1).Amount)
+	var amount int64 = 0
+	for _, mosaic := range transferTx.Mosaics {
+		amount += int64(mosaic.Amount) / unit
+	}
+
+	var request int64 = 0
+	for _, coin := range cosmosMsg.Amount {
+		request += coin.Amount.Int64()
+	}
+
+	if (consumed + request) > amount {
+		sub.Logger.Error(fmt.Sprintf("Request amount exceeds remainning %s, request=%d, remainning=%d", cosmosMsg.MainchainTxHash, request, amount-consumed))
+		return
+	}
+
+	remaiining := amount - consumed - request
+	msg := types.NewMsgPegClaim(cosmosMsg.Address, cosmosMsg.MainchainTxHash, cosmosMsg.Amount, remaiining, sub.ValidatorAddress)
 	err = txs.RelayPeg(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, msg)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))

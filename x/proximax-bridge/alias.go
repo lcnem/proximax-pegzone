@@ -12,6 +12,7 @@ const (
 	RouterKey         = types.RouterKey
 	StoreKey          = types.StoreKey
 	StoreKeyForPeg    = types.StoreKeyForPeg
+	StoreKeyForUnpeg  = types.StoreKeyForUnpeg
 	StoreKeyForCosign = types.StoreKeyForCosign
 	StoreKeyForInvite = types.StoreKeyForInvite
 	DefaultParamspace = types.DefaultParamspace

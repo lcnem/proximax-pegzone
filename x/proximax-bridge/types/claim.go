@@ -10,7 +10,7 @@ import (
 )
 
 func CreateOracleClaimFromMsgPegClaim(cdc *codec.Codec, msg MsgPegClaim) (oracle.Claim, error) {
-	oracleID := msg.MainchainTxHash
+	oracleID := fmt.Sprintf("%s,%s,%d", msg.MainchainTxHash, msg.Amount.String(), msg.Remainning)
 	claimBytes, err := json.Marshal(msg)
 	if err != nil {
 		return oracle.Claim{}, err

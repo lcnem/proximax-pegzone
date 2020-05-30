@@ -3,6 +3,7 @@ package proximax_bridge
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -54,9 +55,22 @@ func NewHandler(cdc *codec.Codec, accountKeeper auth.AccountKeeper, bridgeKeeper
 func handleMsgPeg(
 	ctx sdk.Context, cdc *codec.Codec, bridgeKeeper Keeper, msg MsgPeg,
 ) (*sdk.Result, error) {
-	if bridgeKeeper.IsUsedHash(ctx, msg.MainchainTxHash) {
-		err := errors.New(fmt.Sprintf("Transaction has been already pegged: %s", msg.MainchainTxHash))
-		return nil, err
+
+	var consumed int64 = 0
+	pegRecord, err := bridgeKeeper.GetPegRecord(ctx, msg.MainchainTxHash)
+	if err == nil {
+		var totalAmount int64 = 0
+		for _, coin := range msg.Amount {
+			totalAmount += coin.Amount.Int64()
+		}
+
+		if totalAmount > pegRecord.Remainning {
+			err = errors.New(fmt.Sprintf("Full amount of transaction has been pegged: %s", msg.MainchainTxHash))
+			return nil, err
+		}
+		for _, coin := range pegRecord.Consumed {
+			consumed += coin.Amount.Int64()
+		}
 	}
 
 	// Send to relayer
@@ -71,6 +85,7 @@ func handleMsgPeg(
 			sdk.NewAttribute(types.AttributeKeyCosmosReceiver, msg.Address.String()),
 			sdk.NewAttribute(types.AttributeKeyMainchainTxHash, msg.MainchainTxHash),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyConsumed, strconv.FormatInt(consumed, 10)),
 		),
 	})
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
@@ -89,7 +104,33 @@ func handleMsgPegClaim(
 		if err := bridgeKeeper.ProcessSuccessfulPegClaim(ctx, status.FinalClaim); err != nil {
 			return nil, err
 		}
-		bridgeKeeper.MarkAsUsedHash(ctx, msg.MainchainTxHash)
+
+		// calculate consumed
+		consumed := sdk.Coins{}
+		pegRecord, err := bridgeKeeper.GetPegRecord(ctx, msg.MainchainTxHash)
+		fmt.Printf("GetPegRecord: %s, %+v, %+v\n", msg.MainchainTxHash, pegRecord, err)
+		if err != nil {
+			//first time
+			consumed = msg.Amount
+		} else {
+			m := make(map[string]int64)
+			for _, coin := range pegRecord.Consumed {
+				m[coin.Denom] = coin.Amount.Int64()
+			}
+			for _, coin := range msg.Amount {
+				val, ok := m[coin.Denom]
+				if !ok {
+					val = 0
+				}
+				m[coin.Denom] = val + coin.Amount.Int64()
+			}
+			for denom, amount := range m {
+				coin := sdk.Coin{Denom: denom, Amount: sdk.NewInt(amount)}
+				consumed = append(consumed, coin)
+			}
+		}
+		fmt.Printf("SetPegRecord: %s, %+v, %d\n", msg.MainchainTxHash, consumed, msg.Remainning)
+		bridgeKeeper.SetPegRecord(ctx, msg.MainchainTxHash, consumed, msg.Remainning)
 	}
 
 	ctx.EventManager().EmitEvents(sdk.Events{
