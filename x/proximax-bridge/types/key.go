@@ -9,6 +9,8 @@ const (
 
 	StoreKeyForPeg = ModuleName + "_peg"
 
+	StoreKeyForUnpeg = ModuleName + "_unpeg"
+
 	StoreKeyForCosign = ModuleName + "_cosign"
 
 	StoreKeyForInvite = ModuleName + "_invite"

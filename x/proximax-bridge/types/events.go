@@ -21,6 +21,8 @@ const (
 	AttributeKeyMainchainAddress       = "mainchain_address"
 	AttributeKeyNewCosignerPublicKey   = "new_cosigner_public_key"
 
+	AttributeKeyConsumed = "consumed"
+
 	AttributeKeyTxHash                = "tx_hash"
 	AttributeKeyNotCosignedValidators = "not_cosigned_validators"
 

@@ -58,15 +58,17 @@ type MsgPegClaim struct {
 	Address          sdk.AccAddress `json:"address" yaml:"address"`
 	MainchainTxHash  string         `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
 	Amount           sdk.Coins      `json:"amount" yaml:"amount"`
+	Remainning       int64          `json:"remaiining" yaml:"remaiining"`
 	ValidatorAddress sdk.ValAddress `json:"validator_address" yaml:"validator_address"`
 }
 
 // NewMsgPegClaim creates a new MsgPegClaim instance
-func NewMsgPegClaim(address sdk.AccAddress, mainchainTxHash string, amount sdk.Coins, validatorAddress sdk.ValAddress) MsgPegClaim {
+func NewMsgPegClaim(address sdk.AccAddress, mainchainTxHash string, amount sdk.Coins, remaiining int64, validatorAddress sdk.ValAddress) MsgPegClaim {
 	return MsgPegClaim{
 		Address:          address,
 		MainchainTxHash:  mainchainTxHash,
 		Amount:           amount,
+		Remainning:       remaiining,
 		ValidatorAddress: validatorAddress,
 	}
 }

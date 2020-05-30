@@ -17,6 +17,7 @@ import (
 type Keeper struct {
 	storeKey          sdk.StoreKey
 	storeKeyForPeg    sdk.StoreKey
+	storeKeyForUnpeg  sdk.StoreKey
 	storeKeyForCosign sdk.StoreKey
 	storeKeyForInvite sdk.StoreKey
 	cdc               *codec.Codec
@@ -27,10 +28,11 @@ type Keeper struct {
 }
 
 // NewKeeper creates a proximax-bridge keeper
-func NewKeeper(cdc *codec.Codec, key, keyForPeg, keyForCosign, keyForInvite sdk.StoreKey, paramspace types.ParamSubspace, supplyKeeper types.SupplyKeeper, slashingKeeper types.SlashingKeeper, oracleKeeper types.OracleKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, key, keyForPeg, keyForUnpeg, keyForCosign, keyForInvite sdk.StoreKey, paramspace types.ParamSubspace, supplyKeeper types.SupplyKeeper, slashingKeeper types.SlashingKeeper, oracleKeeper types.OracleKeeper) Keeper {
 	keeper := Keeper{
 		storeKey:          key,
 		storeKeyForPeg:    keyForPeg,
+		storeKeyForUnpeg:  keyForUnpeg,
 		storeKeyForCosign: keyForCosign,
 		storeKeyForInvite: keyForInvite,
 		cdc:               cdc,
@@ -45,6 +47,32 @@ func NewKeeper(cdc *codec.Codec, key, keyForPeg, keyForCosign, keyForInvite sdk.
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+type PegRecord struct {
+	MainchainTxHash string    `json:"mainchain_tx_hash" yaml:"mainchain_tx_hash"`
+	Consumed        sdk.Coins `json:"consumed" yaml:"consumed"`
+	Remainning      int64     `json:"remainning" yaml:"remainning"`
+}
+
+func (k Keeper) SetPegRecord(ctx sdk.Context, txHash string, consumed sdk.Coins, remainning int64) error {
+	peg := PegRecord{MainchainTxHash: txHash, Consumed: consumed, Remainning: remainning}
+	pegBytes, err := json.Marshal(peg)
+	if err != nil {
+		return err
+	}
+	ctx.KVStore(k.storeKeyForPeg).Set([]byte(txHash), pegBytes)
+	return nil
+}
+
+func (k Keeper) GetPegRecord(ctx sdk.Context, txHash string) (PegRecord, error) {
+	peg := PegRecord{}
+	if !ctx.KVStore(k.storeKeyForPeg).Has([]byte(txHash)) {
+		return peg, errors.New(fmt.Sprintf("Peg Record is Not Found: %s", txHash))
+	}
+	unpegBytes := ctx.KVStore(k.storeKeyForPeg).Get([]byte(txHash))
+	err := json.Unmarshal(unpegBytes, &peg)
+	return peg, err
 }
 
 func (k Keeper) IsUsedHash(ctx sdk.Context, hash string) bool {
@@ -67,16 +95,16 @@ func (k Keeper) SetUnpegRecord(ctx sdk.Context, mainChainTxHash string, accountA
 	if err != nil {
 		return err
 	}
-	ctx.KVStore(k.storeKeyForPeg).Set([]byte(mainChainTxHash), unpegBytes)
+	ctx.KVStore(k.storeKeyForUnpeg).Set([]byte(mainChainTxHash), unpegBytes)
 	return nil
 }
 
 func (k Keeper) GetUnpegRecord(ctx sdk.Context, mainChainTxHash string) (UnpegRecord, error) {
 	unpeg := UnpegRecord{}
-	if !ctx.KVStore(k.storeKeyForPeg).Has([]byte(mainChainTxHash)) {
+	if !ctx.KVStore(k.storeKeyForUnpeg).Has([]byte(mainChainTxHash)) {
 		return unpeg, errors.New(fmt.Sprintf("Unpeg Record is Not Found: %s", mainChainTxHash))
 	}
-	unpegBytes := ctx.KVStore(k.storeKeyForPeg).Get([]byte(mainChainTxHash))
+	unpegBytes := ctx.KVStore(k.storeKeyForUnpeg).Get([]byte(mainChainTxHash))
 	err := json.Unmarshal(unpegBytes, &unpeg)
 	return unpeg, err
 }

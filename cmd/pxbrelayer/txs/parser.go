@@ -1,16 +1,19 @@
 package txs
 
 import (
+	"strconv"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmKv "github.com/tendermint/tendermint/libs/kv"
 
 	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 )
 
-func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
+func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, int64, error) {
 	var cosmosReceiver sdk.AccAddress
 	var mainchainTxHash string
 	var amount sdk.Coins
+	var consumed int64
 	var err error
 
 	for _, attribute := range attributes {
@@ -26,13 +29,19 @@ func PegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgPeg, error) {
 		case "amount":
 			amount, err = sdk.ParseCoins(val)
 			break
+		case "consumed":
+			parsedVal, err := strconv.ParseInt(val, 10, 64)
+			if err != nil {
+				parsedVal = 0
+			}
+			consumed = parsedVal
 		}
 	}
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 	cosmosMsg := msgTypes.NewMsgPeg(cosmosReceiver, mainchainTxHash, amount)
-	return &cosmosMsg, nil
+	return &cosmosMsg, consumed, nil
 }
 
 func UnpegEventToCosmosMsg(attributes []tmKv.Pair) (*msgTypes.MsgUnpeg, error) {
