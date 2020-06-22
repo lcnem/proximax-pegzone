@@ -1,9 +1,5 @@
 # ProximaX Peg Zone
 
-- 基本設計は cosmos/peggy を踏襲。
-- d,cli,relayer の 3 部設計。
-- `1000000000` `stake`のネイティブトークン。
-
 ## Install
 
 Sample of Ubuntu 20.04
@@ -27,22 +23,22 @@ make install
 ## Config
 
 ```shell
-vi $HOME/.pxbd/config/config.toml
+vi ~/.pxbd/config/config.toml
 ```
 
 ## Test Locally with single node
 
 ### Initialize and Start Deamon node
 
-``` 
+```shell
 pxbd init test --chain-id testing
 pxbcli config keyring-backend test
- 
+
 pxbcli keys add validator
 pxbcli keys add account
- 
+
 pxbd add-genesis-account $(pxbcli keys show validator -a) 1000token,100000000stake
- 
+
 pxbd gentx --name validator --keyring-backend test
 pxbd collect-gentxs
 pxbd start
@@ -50,7 +46,7 @@ pxbd start
 
 ### Start Relayer
 
-```
+```shell
 # Relayer for Cosmos
 pxbrelayer init cosmos [URL for node by RPC] [URL for ProximaX node] [Validator Name] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID]
 
@@ -60,7 +56,7 @@ pxbrelayer init proximax [URL for node by RPC] [URL for ProximaX node] [Validato
 
 Example
 
-```
+```shell
 pxbrelayer init cosmos http://127.0.0.1:26657 http://bctestnet1.brimstone.xpxsirius.io:3000 validator1  8611AF477E001C9D033216F94328BD22F91E782FD2D104FAE3F5B66997579154 8007692AB57547661CD0721FBE18AA1DB27E0CC55921D4C0C9A3BEBC96221AC7 --chain-id=testing --rpc-url=http://127.0.0.1:26657
 
 pxbrelayer init proximax http://127.0.0.1:26657 http://bctestnet1.brimstone.xpxsirius.io:3000 validator 8611AF477E001C9D033216F94328BD22F91E782FD2D104FAE3F5B66997579154 VBK6ZOVHKSJOFUOX7XUHHZUABO4Q33GCF726AKHG --chain-id=testing
@@ -68,7 +64,7 @@ pxbrelayer init proximax http://127.0.0.1:26657 http://bctestnet1.brimstone.xpxs
 
 ## Test Locally with Multiple nodes by docker-compose
 
-```
+```shell
 make build-linux
 
 make build-docker-pxbdnode
@@ -105,4 +101,3 @@ Invite new ProximaX account to Multisig Account
 ```shell
 pxbcli tx proximaxbridge request-invitation [from_key_or_address] [multisig_account_address] [new_cosigner_public_key] [first_cosigner_address]
 ```
-
