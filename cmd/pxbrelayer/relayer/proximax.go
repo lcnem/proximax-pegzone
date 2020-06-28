@@ -3,94 +3,114 @@ package relayer
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
-	"os/signal"
-	"syscall"
 
+	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	cosmosSdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/lcnem/proximax-pegzone/cmd/pxbrelayer/txs"
 	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
 	"github.com/proximax-storage/go-xpx-chain-sdk/sdk"
 	"github.com/proximax-storage/go-xpx-chain-sdk/sdk/websocket"
 	tmLog "github.com/tendermint/tendermint/libs/log"
+	tmClient "github.com/tendermint/tendermint/rpc/client"
 )
 
-func InitProximaXRelayer(
-	inBuf io.Reader,
-	cdc *codec.Codec,
-	logger tmLog.Logger,
+type ProximaXSub struct {
+	Cdc    *codec.Codec
+	CliCtx sdkContext.CLIContext
+	TxBldr authtypes.TxBuilder
+	Logger tmLog.Logger
 
-	tendermintNode string,
-	chainID string,
-	validatorMoniker string,
+	ChainId string
 
-	proximaxNode string,
-	proximaxPrivateKey string,
-	proximaxMultisigAddress string,
-) error {
-	validatorAddress, validatorName, err := LoadValidatorCredentials(validatorMoniker, inBuf)
+	ValidatorMoniker string
+	ValidatorAddress cosmosSdk.ValAddress
+	SignerAccount    *sdk.Account
+	MultisigAccount  *sdk.PublicAccount
+
+	TendermintClient *tmClient.HTTP
+	ProximaXClient   *sdk.Client
+	ProximaXWsClient websocket.CatapultClient
+}
+
+func NewProximaxSub(cdc *codec.Codec, cliCtx sdkContext.CLIContext, txBldr authtypes.TxBuilder, logger tmLog.Logger, chainID, validatorMoniker string, validatorAddress cosmosSdk.ValAddress, proximaXNode, proximaXPrivateKey, proximaXMultisibPublicKey string) (ProximaXSub, error) {
+	conf, err := sdk.NewConfig(context.Background(), []string{proximaXNode})
 	if err != nil {
-		return err
-	}
-
-	cliCtx := LoadTendermintCLIContext(cdc, validatorAddress, validatorName, tendermintNode, chainID)
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
-	conf, err := sdk.NewConfig(context.Background(), []string{proximaxNode})
-	if err != nil {
-		return err
+		return ProximaXSub{}, err
 	}
 
 	client := sdk.NewClient(nil, conf)
 	wsClient, err := websocket.NewClient(context.Background(), conf)
 	if err != nil {
-		return err
+		return ProximaXSub{}, err
 	}
 
-	account, err := client.NewAccountFromPrivateKey(proximaxPrivateKey)
+	account, err := client.NewAccountFromPrivateKey(proximaXPrivateKey)
 	if err != nil {
-		return err
+		return ProximaXSub{}, err
 	}
-	multisigAccount, err := client.NewAccountFromPublicKey(proximaxMultisigAddress)
+	multisigAccount, err := client.NewAccountFromPublicKey(proximaXMultisibPublicKey)
 	if err != nil {
-		return err
+		return ProximaXSub{}, err
 	}
 
-	err = wsClient.AddPartialAddedHandlers(account.Address, func(tx *sdk.AggregateTransaction) bool {
-		partialAddedHandler(client, logger, account, tx)
+	return ProximaXSub{
+		Cdc:              cdc,
+		CliCtx:           cliCtx,
+		TxBldr:           txBldr,
+		Logger:           logger,
+		ChainId:          chainID,
+		ValidatorMoniker: validatorMoniker,
+		ValidatorAddress: validatorAddress,
+		SignerAccount:    account,
+		MultisigAccount:  multisigAccount,
+		ProximaXClient:   client,
+		ProximaXWsClient: wsClient,
+	}, nil
+}
+
+func (sub *ProximaXSub) Start(exitSignal chan os.Signal) error {
+	err := sub.ProximaXWsClient.AddPartialAddedHandlers(sub.SignerAccount.Address, func(tx *sdk.AggregateTransaction) bool {
+		partialAddedHandler(sub.ProximaXClient, sub.Logger, sub.SignerAccount, tx)
 		return false
 	})
+	if err != nil {
+		return err
+	}
 
-	err = wsClient.AddStatusHandlers(account.Address, func(info *sdk.StatusInfo) bool {
+	err = sub.ProximaXWsClient.AddStatusHandlers(sub.SignerAccount.Address, func(info *sdk.StatusInfo) bool {
 		hash := info.Hash.String()
 
-		msg := msgTypes.NewMsgNotCosignedClaim(validatorAddress, hash)
-		err := txs.RelayNotCosigned(cliCtx, txBldr, validatorMoniker, msg)
+		msg := msgTypes.NewMsgNotCosignedClaim(sub.ValidatorAddress, hash)
+		err := txs.RelayNotCosigned(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, msg)
 		if err != nil {
-			logger.Error("Failed to Relay NotCosigned", "err", err)
+			sub.Logger.Error("Failed to Relay NotCosigned", "err", err)
 		}
 		return false
 	})
+	if err != nil {
+		return err
+	}
 
-	err = wsClient.AddCosignatureHandlers(multisigAccount.Address, func(info *sdk.SignerInfo) bool {
+	err = sub.ProximaXWsClient.AddCosignatureHandlers(sub.MultisigAccount.Address, func(info *sdk.SignerInfo) bool {
 		txHash := info.ParentHash.String()
 		signerPublicKey := info.Signer
 
-		msg := msgTypes.NewMsgNotifyCosigned(validatorAddress, txHash, signerPublicKey)
-		err := txs.RelayNotifyCosigned(cliCtx, txBldr, validatorMoniker, msg)
+		msg := msgTypes.NewMsgNotifyCosigned(sub.ValidatorAddress, txHash, signerPublicKey)
+		err := txs.RelayNotifyCosigned(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, msg)
 		if err != nil {
-			logger.Error("Failed to Relay NotifyCosigned", "err", err)
+			sub.Logger.Error("Failed to Relay NotifyCosigned", "err", err)
 		}
 
 		return true
 	})
+	if err != nil {
+		return err
+	}
 
-	err = wsClient.AddConfirmedAddedHandlers(multisigAccount.Address, func(info sdk.Transaction) bool {
+	err = sub.ProximaXWsClient.AddConfirmedAddedHandlers(sub.MultisigAccount.Address, func(info sdk.Transaction) bool {
 		aggregateTx, ok := info.(*sdk.AggregateTransaction)
 		if ok {
 			txHash := aggregateTx.TransactionHash.String()
@@ -98,10 +118,10 @@ func InitProximaXRelayer(
 			for _, tx := range aggregateTx.InnerTransactions {
 				_, ok := tx.(*sdk.ModifyMultisigAccountTransaction)
 				if ok {
-					msg := msgTypes.NewMsgConfirmedInvitation(validatorAddress, txHash)
-					err := txs.RelayConfirmedInvitation(cliCtx, txBldr, validatorMoniker, msg)
+					msg := msgTypes.NewMsgConfirmedInvitation(sub.ValidatorAddress, txHash)
+					err := txs.RelayConfirmedInvitation(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, msg)
 					if err != nil {
-						logger.Error("Failed to Relay ConfirmedInvitation", "err", err)
+						sub.Logger.Error("Failed to Relay ConfirmedInvitation", "err", err)
 					}
 				}
 			}
@@ -109,11 +129,12 @@ func InitProximaXRelayer(
 
 		return true
 	})
+	if err != nil {
+		return err
+	}
 
-	go wsClient.Listen()
+	go sub.ProximaXWsClient.Listen()
 
-	exitSignal := make(chan os.Signal, 1)
-	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal
 
 	return nil

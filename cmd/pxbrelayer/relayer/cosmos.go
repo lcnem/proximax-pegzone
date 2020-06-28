@@ -3,13 +3,11 @@ package relayer
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 
 	sdkContext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/lcnem/proximax-pegzone/cmd/pxbrelayer/txs"
 	msgTypes "github.com/lcnem/proximax-pegzone/x/proximax-bridge"
@@ -31,7 +29,6 @@ type CosmosSub struct {
 	ChainId string
 
 	ValidatorMoniker         string
-	ValidatorName            string
 	ValidatorAddress         sdk.ValAddress
 	ProximaxPrivateKey       string
 	ProximxMultisigPublicKey string
@@ -40,17 +37,7 @@ type CosmosSub struct {
 	ProximaXClient   *proximax.Client
 }
 
-func NewCosmosSub(inBuf io.Reader, cdc *codec.Codec, logger tmLog.Logger, chainID, validatorMoniker, tendermintNode, proximaXNode, proximaXPrivateKey, proximaXMultisibPubKey string) (CosmosSub, error) {
-	validatorAddress, validatorName, err := LoadValidatorCredentials(validatorMoniker, inBuf)
-	if err != nil {
-		return CosmosSub{}, err
-	}
-
-	cliCtx := LoadTendermintCLIContext(cdc, validatorAddress, validatorName, tendermintNode, chainID)
-	txBldr := authtypes.NewTxBuilderFromCLI(nil).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID)
-
+func NewCosmosSub(cdc *codec.Codec, cliCtx sdkContext.CLIContext, txBldr authtypes.TxBuilder, logger tmLog.Logger, tendermintNode, chainID, validatorMoniker string, validatorAddress sdk.ValAddress, proximaXNode, proximaXPrivateKey, proximaXMultisibPublicKey string) (CosmosSub, error) {
 	conf, err := proximax.NewConfig(context.Background(), []string{proximaXNode})
 	if err != nil {
 		return CosmosSub{}, err
@@ -69,10 +56,9 @@ func NewCosmosSub(inBuf io.Reader, cdc *codec.Codec, logger tmLog.Logger, chainI
 		TxBldr:                   txBldr,
 		ChainId:                  chainID,
 		ValidatorMoniker:         validatorMoniker,
-		ValidatorName:            validatorName,
 		ValidatorAddress:         validatorAddress,
 		ProximaxPrivateKey:       proximaXPrivateKey,
-		ProximxMultisigPublicKey: proximaXMultisibPubKey,
+		ProximxMultisigPublicKey: proximaXMultisibPublicKey,
 		TendermintClient:         tendermintClient,
 		ProximaXClient:           proximax.NewClient(nil, conf),
 	}, nil
@@ -202,9 +188,7 @@ func (sub *CosmosSub) handleUnpegEvent(attributes []tmKv.Pair) {
 	}
 
 	firstCosignatory, err := sub.ProximaXClient.NewAccountFromPrivateKey(sub.ProximaxPrivateKey)
-	publicKey := firstCosignatory.PublicAccount.PublicKey
-
-	recordMsg := msgTypes.NewMsgRecordUnpeg(msg.Address, txHash, msg.Amount, publicKey, sub.ValidatorAddress)
+	recordMsg := msgTypes.NewMsgRecordUnpeg(msg.Address, txHash, msg.Amount, firstCosignatory.PublicKey, sub.ValidatorAddress)
 	err = txs.RelayRecordUnpeg(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, recordMsg)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
