@@ -48,18 +48,13 @@ pxbd start
 
 ```shell
 # Relayer for Cosmos
-pxbrelayer init cosmos [URL for node by RPC] [URL for ProximaX node] [Validator Name] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID]
-
-# Relayer for ProximaX
-pxbrelayer init proximax [URL for node by RPC] [URL for ProximaX node] [Validator Name] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID]
+pxbrelayer start [URL for node by RPC] [URL for ProximaX node] [Validator Name] [ProximaX Cosigner Private Key] [ProximaX Multisig Account Public Key] --chain-id=[ChainID]
 ```
 
 Example
 
 ```shell
-pxbrelayer init cosmos http://127.0.0.1:26657 http://bctestnet1.brimstone.xpxsirius.io:3000 validator1  8611AF477E001C9D033216F94328BD22F91E782FD2D104FAE3F5B66997579154 8007692AB57547661CD0721FBE18AA1DB27E0CC55921D4C0C9A3BEBC96221AC7 --chain-id=testing --rpc-url=http://127.0.0.1:26657
-
-pxbrelayer init proximax http://127.0.0.1:26657 http://bctestnet1.brimstone.xpxsirius.io:3000 validator 8611AF477E001C9D033216F94328BD22F91E782FD2D104FAE3F5B66997579154 VBK6ZOVHKSJOFUOX7XUHHZUABO4Q33GCF726AKHG --chain-id=testing
+pxbrelayer start http://127.0.0.1:26657 http://bctestnet1.brimstone.xpxsirius.io:3000 validator1  8611AF477E001C9D033216F94328BD22F91E782FD2D104FAE3F5B66997579154 8007692AB57547661CD0721FBE18AA1DB27E0CC55921D4C0C9A3BEBC96221AC7 --chain-id=testing --rpc-url=http://127.0.0.1:26657
 ```
 
 ## Test Locally with Multiple nodes by docker-compose
