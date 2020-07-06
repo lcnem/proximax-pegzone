@@ -26,6 +26,5 @@ jobs:
 
       - name: Build
         run: make install
-
-      - name: Test
-        run: go test -v .
+      # - name: Test
+      #   run: go test -v .
