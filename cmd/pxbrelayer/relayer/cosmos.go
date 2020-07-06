@@ -188,7 +188,7 @@ func (sub *CosmosSub) handleUnpegEvent(attributes []tmKv.Pair) {
 	}
 
 	firstCosignatory, err := sub.ProximaXClient.NewAccountFromPrivateKey(sub.ProximaxPrivateKey)
-	recordMsg := msgTypes.NewMsgRecordUnpeg(msg.Address, txHash, msg.Amount, firstCosignatory.PublicKey, sub.ValidatorAddress)
+	recordMsg := msgTypes.NewMsgRecordUnpeg(msg.Address, txHash, msg.Amount, firstCosignatory.PublicAccount.PublicKey, sub.ValidatorAddress)
 	err = txs.RelayRecordUnpeg(sub.CliCtx, sub.TxBldr, sub.ValidatorMoniker, recordMsg)
 	if err != nil {
 		sub.Logger.Error(fmt.Sprintf("Faild while broadcast transaction: %+v", err))
