@@ -94,5 +94,5 @@ pxbcli tx proximaxbridge unpeg [Validator's key or address] [Amount] [Recipient 
 Invite new ProximaX account to Multisig Account
 
 ```shell
-pxbcli tx proximaxbridge request-invitation [from_key_or_address] [multisig_account_address] [new_cosigner_public_key] [first_cosigner_address]
+pxbcli tx proximaxbridge request-invitation [from_key_or_address] [new_cosigner_public_key] [first_cosigner_address]
 ```
